@@ -88,13 +88,16 @@ class LoginOrRegisterController: UIViewController {
         return ptf
     }()
     
-    let profileImageView: UIImageView = {
+    lazy var profileImageView: UIImageView = {
         
         let piv = UIImageView()
         piv.image = UIImage(named: "gameofthrones_splash")
         piv.translatesAutoresizingMaskIntoConstraints = false
         //Fix aspect ratio of image:
         piv.contentMode = .scaleAspectFill
+        piv.isUserInteractionEnabled = true
+        
+        piv.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleProfileImageView)))
         
         return piv
     }()
@@ -219,6 +222,7 @@ class LoginOrRegisterController: UIViewController {
         profileImageView.heightAnchor.constraint(equalToConstant: 150).isActive = true
     }
     
+    
     func setupLoginOrRegisterSegmentedControl() {
         
         //Need x, y, width, height constraints.
@@ -238,93 +242,5 @@ class LoginOrRegisterController: UIViewController {
             
             handleLogin()
         }
-    }
-    
-    
-    func handleLogin() {
-        
-        guard let email = emailTextField.text, let password = passwordTextField.text else {
-            
-            print("Form is not valid.")
-            
-            return
-        }
-        
-        Auth.auth().signIn(withEmail: email, password: password) { (user, loginError) in
-            
-            if loginError != nil {
-                
-                print(loginError)
-                
-                return
-            }
-            
-            //Successfully signed in.
-            self.dismiss(animated: true, completion: nil)
-            }
-    }
-    
-    
-    func handleRegister() {
-        
-        guard let email = emailTextField.text, let password = passwordTextField.text, let name = nameTextField.text else {
-            
-            print("Form is not valid.")
-            
-            return
-        }
-        
-        Auth.auth().createUser(withEmail: email, password: password) { (result, registerError: Error?) in
-            
-            if registerError != nil {
-                
-                print(registerError)
-                
-                return
-            }
-            
-            guard let uid = result?.user.uid else { return }
-            
-            //Successfully authenticated user.
-            let firDatRef = Database.database().reference(fromURL: "https://chatappwithfirebase-2c6f9.firebaseio.com/")
-            let usersReference = firDatRef.child("users").child(uid)
-            let values = ["name": name, "email": email]
-            
-            usersReference.updateChildValues(values, withCompletionBlock: { (err, ref) in
-                
-                if err != nil {
-                    
-                    print(err)
-                }
-                
-                self.dismiss(animated: true, completion: nil)
-            })
-        }
-    }
-    
-    
-    @objc func handleLoginOrRegisterSegmentedControlClicked() {
-
-        loginRegisterButton.setTitle(loginOrRegisterSegmentedControl.titleForSegment(at: loginOrRegisterSegmentedControl.selectedSegmentIndex), for: .normal)
-
-        //Change height of inputsContainerView. If Register segment is selected set it to 150, or if Login segment is selected set it to 100.
-        inputsContainerViewHeightAnchor?.constant = loginOrRegisterSegmentedControl.selectedSegmentIndex == 1 ? 150 : 100
-
-        //Change height of nameTextField. If the Register segment(index is 1) is selected show nameTextField thus its height is 1/3 of inputsContainerView's height, else I disappear it by setting its height equal to 0.
-        nameTextFieldHeightAnchor?.isActive = false
-        nameTextFieldHeightAnchor = nameTextField.heightAnchor.constraint(equalTo: inputsContainerView.heightAnchor, multiplier: loginOrRegisterSegmentedControl.selectedSegmentIndex == 1 ? 1/3 : 0)
-        nameTextField.isHidden = loginOrRegisterSegmentedControl.selectedSegmentIndex == 0
-        nameTextFieldHeightAnchor?.isActive = true
-
-        //Change height of emailTextField. If the Register segment(index is 1) is selected emailTextField's height is 1/3 of inputsContainerView's height, else set its height equal to 1/2.
-        emailTextFieldHeightAnchor?.isActive = false
-        emailTextFieldHeightAnchor = emailTextField.heightAnchor.constraint(equalTo: inputsContainerView.heightAnchor, multiplier: loginOrRegisterSegmentedControl.selectedSegmentIndex == 1 ? 1/3 : 1/2)
-        emailTextFieldHeightAnchor?.isActive = true
-
-
-        //Change height of passwordTextField. If the Register segment(index is 1) is selected passwordTextField's height is 1/3 of inputsContainerView's height, else set its height equal to 1/2.
-        passwordTextFieldHeightAnchor?.isActive = false
-        passwordTextFieldHeightAnchor = passwordTextField.heightAnchor.constraint(equalTo: inputsContainerView.heightAnchor, multiplier: loginOrRegisterSegmentedControl.selectedSegmentIndex == 1 ? 1/3 : 1/2)
-        passwordTextFieldHeightAnchor?.isActive = true
     }
 }

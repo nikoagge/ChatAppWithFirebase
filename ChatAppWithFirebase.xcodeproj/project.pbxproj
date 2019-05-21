@@ -10,6 +10,7 @@
 		0BB4DAA68DF2B79743D3061F /* Pods_ChatAppWithFirebase.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A57FC1B6A95B0A576705FB8A /* Pods_ChatAppWithFirebase.framework */; };
 		17041584229164B000B794A7 /* NewMessageController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17041583229164B000B794A7 /* NewMessageController.swift */; };
 		170589F2228FDF4900E52BFF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 170589F1228FDF4900E52BFF /* GoogleService-Info.plist */; };
+		1732E9632293D94D00143D2E /* LoginOrRegisterControllerHandlersExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1732E9622293D94D00143D2E /* LoginOrRegisterControllerHandlersExtension.swift */; };
 		176DFBE922927E480032AB2A /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 176DFBE822927E480032AB2A /* User.swift */; };
 		176DFBEB2292973C0032AB2A /* UserCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 176DFBEA2292973C0032AB2A /* UserCell.swift */; };
 		17EEA185228F1BE600E44270 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17EEA184228F1BE600E44270 /* AppDelegate.swift */; };
@@ -24,6 +25,7 @@
 /* Begin PBXFileReference section */
 		17041583229164B000B794A7 /* NewMessageController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMessageController.swift; sourceTree = "<group>"; };
 		170589F1228FDF4900E52BFF /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		1732E9622293D94D00143D2E /* LoginOrRegisterControllerHandlersExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginOrRegisterControllerHandlersExtension.swift; sourceTree = "<group>"; };
 		176DFBE822927E480032AB2A /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		176DFBEA2292973C0032AB2A /* UserCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCell.swift; sourceTree = "<group>"; };
 		17EEA181228F1BE600E44270 /* ChatAppWithFirebase.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChatAppWithFirebase.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -223,6 +225,7 @@
 		17EEA1A1228F22E200E44270 /* Service */ = {
 			isa = PBXGroup;
 			children = (
+				1732E9622293D94D00143D2E /* LoginOrRegisterControllerHandlersExtension.swift */,
 			);
 			path = Service;
 			sourceTree = "<group>";
@@ -397,6 +400,7 @@
 				17041584229164B000B794A7 /* NewMessageController.swift in Sources */,
 				176DFBE922927E480032AB2A /* User.swift in Sources */,
 				17EEA1A8228F238800E44270 /* RGBColorExtension.swift in Sources */,
+				1732E9632293D94D00143D2E /* LoginOrRegisterControllerHandlersExtension.swift in Sources */,
 				17EEA1A6228F233800E44270 /* LoginOrRegisterController.swift in Sources */,
 				17EEA185228F1BE600E44270 /* AppDelegate.swift in Sources */,
 				176DFBEB2292973C0032AB2A /* UserCell.swift in Sources */,
