@@ -34,6 +34,7 @@ extension LoginOrRegisterController: UIImagePickerControllerDelegate, UINavigati
             }
             
             //Successfully signed in.
+            self.messagesController?.fetchUserFromFirebaseAndSetupNavigationBarTitle()
             self.dismiss(animated: true, completion: nil)
         }
     }
@@ -64,11 +65,15 @@ extension LoginOrRegisterController: UIImagePickerControllerDelegate, UINavigati
             let imageName = NSUUID().uuidString
             
             //Use .child("profile_images") to create a subfolder to have all my images organized.
-            let firebaseStorageReference = Storage.storage().reference().child("profile_images").child("\(imageName).png")
+            let firebaseStorageReference = Storage.storage().reference().child("profile_images").child("\(imageName).jpg")
             
-            guard let uploadData = self.profileImageView.image?.pngData() else { return }
+            //Compress the image, to 0.1 as 10% of the original image:
+            guard let safelyUnwrappedProfileImage = self.profileImageView.image, let compressedUploadData = safelyUnwrappedProfileImage.jpegData(compressionQuality: 0.1) else { return }
             
-            firebaseStorageReference.putData(uploadData, metadata: nil, completion: { (metadata, error) in
+            //Too large data, make the download slow:
+            //guard let uploadData = self.profileImageView.image?.pngData() else { return }
+            
+            firebaseStorageReference.putData(compressedUploadData, metadata: nil, completion: { (metadata, error) in
                 
                 if error != nil {
                     
@@ -110,6 +115,14 @@ extension LoginOrRegisterController: UIImagePickerControllerDelegate, UINavigati
                 print(err)
             }
             
+            //self.messagesController?.fetchUserFromFirebaseAndSetupNavigationBar()
+            //self.messagesController?.navigationItem.title = values["name"] as? String
+            let user = User()
+            user.email = values["email"] as? String
+            user.name = values["name"] as? String
+            user.profileImageURL = values["profileImageURL"] as? String
+            //user.setValuesForKeys(values)
+            self.messagesController?.setupNavigationBarTitleView(withUser: user)
             self.dismiss(animated: true, completion: nil)
         })
     }

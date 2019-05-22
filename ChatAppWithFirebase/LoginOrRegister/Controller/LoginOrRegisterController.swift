@@ -12,7 +12,7 @@ import Firebase
 
 
 class LoginOrRegisterController: UIViewController {
-
+    
     
     let inputsContainerView: UIView = {
        
@@ -124,6 +124,8 @@ class LoginOrRegisterController: UIViewController {
         
         return .lightContent
     }
+    
+    var messagesController: MessagesController?
     
     
     override func viewDidLoad() {
