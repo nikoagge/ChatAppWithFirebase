@@ -18,6 +18,8 @@ class NewMessageController: UITableViewController {
     
     var users = [User]()
     
+    var messagesController: MessagesController?
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -52,6 +54,7 @@ class NewMessageController: UITableViewController {
                 if let childDictionary = child.value as? NSDictionary {
                     
                     let user = User()
+                    user.id = databaseSnapshot.key
                     user.name = childDictionary["name"] as? String
                     user.email = childDictionary["email"] as? String
                     user.profileImageURL = childDictionary["profileImageURL"] as? String
@@ -130,5 +133,15 @@ class NewMessageController: UITableViewController {
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         
         return 72
+    }
+    
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        dismiss(animated: true) {
+            
+            let user = self.users[indexPath.row]
+            self.messagesController?.displayChatLogController(forUser: user)
+        }
     }
 }

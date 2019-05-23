@@ -51,12 +51,18 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate {
         return slv
     }()
     
+    var user: User? {
+        
+        didSet {
+            
+            navigationItem.title = user?.name
+        }
+    }
+    
     
     override func viewDidLoad() {
         
         super.viewDidLoad()
-        
-        navigationItem.title = "Chat Log Controller"
         
         collectionView.backgroundColor = .white
         
@@ -103,9 +109,11 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate {
         let firebaseDatRef = Database.database().reference().child("messages")
         let childRef = firebaseDatRef.childByAutoId()
         
-        guard let inputMessageText = inputMessageTextField.text else { return }
+        guard let safelyUnwrappedInputMessageText = inputMessageTextField.text, let safelyUnwrappedUserName = user?.name, let safelyUnwrappedToReceiverUserId = user?.id, let safelyUnwrappedFromSenderUserId = Auth.auth().currentUser?.uid else { return }
         
-        let dictionaryOfValues = ["text": inputMessageText]
+        let timestamp = Int(NSDate().timeIntervalSince1970)
+        
+        let dictionaryOfValues = ["text": safelyUnwrappedInputMessageText, "name": safelyUnwrappedUserName, "fromSenderUserId": safelyUnwrappedFromSenderUserId, "toReceiverUserId": safelyUnwrappedToReceiverUserId, "timestamp": timestamp] as [String : Any]
         
         childRef.updateChildValues(dictionaryOfValues)
     }

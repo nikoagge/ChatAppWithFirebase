@@ -14,12 +14,25 @@ import Firebase
 class MessagesController: UITableViewController {
     
     
+    var messages = [Message]()
+    
+    var cellIdentifier = "cellId"
+    
+    
     override func viewDidLoad() {
         
         super.viewDidLoad()
         // Do any additional setup after loading the view.
+        setupTableView()
         setupNavigationBarButtons()
         checkIfUserIsLoggedIn()
+        observeMessages()
+    }
+    
+    
+    func setupTableView() {
+        
+        tableView.tableFooterView = UIView()
     }
     
     
@@ -52,6 +65,7 @@ class MessagesController: UITableViewController {
     @objc func newMessageBarButtonTapped() {
         
         let newMessageController = NewMessageController()
+        newMessageController.messagesController = self
         let navigationController = UINavigationController(rootViewController: newMessageController)
         
         present(navigationController, animated: true, completion: nil)
@@ -67,7 +81,32 @@ class MessagesController: UITableViewController {
             perform(#selector(logoutBarButtonTapped), with: nil, afterDelay: 0) //Actually despite 0 that gives it a little necessary delay.
         } else {
             
+            fetchUserFromFirebaseAndSetupNavigationBarTitle()
+        }
+    }
+    
+    
+    func observeMessages() {
+        
+        let firebaseDatRef = Database.database().reference().child("messages")
+        firebaseDatRef.observe(.childAdded) { (databaseSnapshot) in
             
+            guard let dictionaryOfValues = databaseSnapshot.value as? [String: AnyObject] else { return }
+            
+            let message = Message()
+            message.fromSenderUserId = dictionaryOfValues["fromSenderUserId"] as? String
+            message.name = dictionaryOfValues["name"] as? String
+            message.text = dictionaryOfValues["text"] as? String
+            message.timestamp = dictionaryOfValues["timestamp"] as? Int
+            message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
+            
+            self.messages.append(message)
+            
+            //In order not to crash because of background thread, run this on main thread:
+            DispatchQueue.main.async {
+                
+                self.tableView.reloadData()
+            }
         }
     }
     
@@ -136,16 +175,33 @@ class MessagesController: UITableViewController {
         containerView.centerXAnchor.constraint(equalTo: titleView.centerXAnchor).isActive = true
         containerView.centerYAnchor.constraint(equalTo: titleView.centerYAnchor).isActive = true
         
-        titleView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(displayChatLogController)))
+        //titleView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(displayChatLogController)))
     }
     
     
-    @objc func displayChatLogController() {
+    @objc func displayChatLogController(forUser user: User) {
         
         let layout = UICollectionViewFlowLayout()
         
         let chatLogController = ChatLogController(collectionViewLayout: layout)
+        chatLogController.user = user
         navigationController?.pushViewController(chatLogController, animated: true)
+    }
+    
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        
+        return messages.count
+    }
+    
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
+        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: cellIdentifier)
+        cell.textLabel?.text = messages[indexPath.row].name
+        cell.detailTextLabel?.text = messages[indexPath.row].text
+        
+        return cell
     }
 }
 
