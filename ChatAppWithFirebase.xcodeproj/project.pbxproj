@@ -12,6 +12,7 @@
 		170589F2228FDF4900E52BFF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 170589F1228FDF4900E52BFF /* GoogleService-Info.plist */; };
 		1732E9632293D94D00143D2E /* LoginOrRegisterControllerHandlersExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1732E9622293D94D00143D2E /* LoginOrRegisterControllerHandlersExtension.swift */; };
 		176AC86E22953A38009D5271 /* UIImageViewCacheExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 176AC86D22953A38009D5271 /* UIImageViewCacheExtension.swift */; };
+		176AC8752295B9E2009D5271 /* ChatLogController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 176AC8742295B9E2009D5271 /* ChatLogController.swift */; };
 		176DFBE922927E480032AB2A /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 176DFBE822927E480032AB2A /* User.swift */; };
 		176DFBEB2292973C0032AB2A /* UserCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 176DFBEA2292973C0032AB2A /* UserCell.swift */; };
 		17EEA185228F1BE600E44270 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17EEA184228F1BE600E44270 /* AppDelegate.swift */; };
@@ -28,6 +29,7 @@
 		170589F1228FDF4900E52BFF /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		1732E9622293D94D00143D2E /* LoginOrRegisterControllerHandlersExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginOrRegisterControllerHandlersExtension.swift; sourceTree = "<group>"; };
 		176AC86D22953A38009D5271 /* UIImageViewCacheExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIImageViewCacheExtension.swift; sourceTree = "<group>"; };
+		176AC8742295B9E2009D5271 /* ChatLogController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatLogController.swift; sourceTree = "<group>"; };
 		176DFBE822927E480032AB2A /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		176DFBEA2292973C0032AB2A /* UserCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCell.swift; sourceTree = "<group>"; };
 		17EEA181228F1BE600E44270 /* ChatAppWithFirebase.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChatAppWithFirebase.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -96,6 +98,46 @@
 			path = Model;
 			sourceTree = "<group>";
 		};
+		176AC86F2295B99A009D5271 /* ChatLog */ = {
+			isa = PBXGroup;
+			children = (
+				176AC8732295B9B3009D5271 /* Model */,
+				176AC8722295B9AE009D5271 /* View */,
+				176AC8712295B9A9009D5271 /* Controller */,
+				176AC8702295B9A4009D5271 /* Service */,
+			);
+			path = ChatLog;
+			sourceTree = "<group>";
+		};
+		176AC8702295B9A4009D5271 /* Service */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Service;
+			sourceTree = "<group>";
+		};
+		176AC8712295B9A9009D5271 /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+				176AC8742295B9E2009D5271 /* ChatLogController.swift */,
+			);
+			path = Controller;
+			sourceTree = "<group>";
+		};
+		176AC8722295B9AE009D5271 /* View */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		176AC8732295B9B3009D5271 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
 		17EEA178228F1BE600E44270 = {
 			isa = PBXGroup;
 			children = (
@@ -117,6 +159,7 @@
 		17EEA183228F1BE600E44270 /* ChatAppWithFirebase */ = {
 			isa = PBXGroup;
 			children = (
+				176AC86F2295B99A009D5271 /* ChatLog */,
 				1704157E229163E300B794A7 /* NewMessage */,
 				17EEA1A0228F22DD00E44270 /* LoginOrRegister */,
 				17EEA19B228F1D0400E44270 /* Messages */,
@@ -399,6 +442,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				176AC8752295B9E2009D5271 /* ChatLogController.swift in Sources */,
 				17EEA187228F1BE600E44270 /* MessagesController.swift in Sources */,
 				176AC86E22953A38009D5271 /* UIImageViewCacheExtension.swift in Sources */,
 				17041584229164B000B794A7 /* NewMessageController.swift in Sources */,

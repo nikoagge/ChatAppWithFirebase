@@ -25,14 +25,14 @@ class MessagesController: UITableViewController {
     
     func setupNavigationBarButtons() {
         
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Logout", style: .plain, target: self, action: #selector(handleLogout))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Logout", style: .plain, target: self, action: #selector(logoutBarButtonTapped))
         
         let newMessageImage = UIImage(named: "new_message_icon")
-        navigationItem.rightBarButtonItem = UIBarButtonItem(image: newMessageImage, style: .plain, target: self, action: #selector(handleNewMessage))
+        navigationItem.rightBarButtonItem = UIBarButtonItem(image: newMessageImage, style: .plain, target: self, action: #selector(newMessageBarButtonTapped))
     }
     
     
-    @objc func handleLogout() {
+    @objc func logoutBarButtonTapped() {
         
         do {
             
@@ -49,7 +49,7 @@ class MessagesController: UITableViewController {
     }
     
     
-    @objc func handleNewMessage() {
+    @objc func newMessageBarButtonTapped() {
         
         let newMessageController = NewMessageController()
         let navigationController = UINavigationController(rootViewController: newMessageController)
@@ -64,7 +64,7 @@ class MessagesController: UITableViewController {
         if Auth.auth().currentUser?.uid == nil {
             
             //In order not to get any warning message about presenting too many viewControllers, do this:
-            perform(#selector(handleLogout), with: nil, afterDelay: 0) //Actually despite 0 that gives it a little necessary delay.
+            perform(#selector(logoutBarButtonTapped), with: nil, afterDelay: 0) //Actually despite 0 that gives it a little necessary delay.
         } else {
             
             
@@ -135,6 +135,17 @@ class MessagesController: UITableViewController {
         
         containerView.centerXAnchor.constraint(equalTo: titleView.centerXAnchor).isActive = true
         containerView.centerYAnchor.constraint(equalTo: titleView.centerYAnchor).isActive = true
+        
+        titleView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(displayChatLogController)))
+    }
+    
+    
+    @objc func displayChatLogController() {
+        
+        let layout = UICollectionViewFlowLayout()
+        
+        let chatLogController = ChatLogController(collectionViewLayout: layout)
+        navigationController?.pushViewController(chatLogController, animated: true)
     }
 }
 

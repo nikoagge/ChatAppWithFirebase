@@ -97,7 +97,7 @@ class LoginOrRegisterController: UIViewController {
         piv.contentMode = .scaleAspectFill
         piv.isUserInteractionEnabled = true
         
-        piv.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleProfileImageView)))
+        piv.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(profileImageViewTapped)))
         
         return piv
     }()
@@ -110,7 +110,7 @@ class LoginOrRegisterController: UIViewController {
         //SelectedSegmentIndex starts from 0.
         lorsc.selectedSegmentIndex = 1
         
-        lorsc.addTarget(self, action: #selector(handleLoginOrRegisterSegmentedControlClicked), for: .valueChanged)
+        lorsc.addTarget(self, action: #selector(loginOrRegisterSegmentedControlClicked), for: .valueChanged)
         
         return lorsc
     }()
@@ -239,10 +239,10 @@ class LoginOrRegisterController: UIViewController {
         
         if loginOrRegisterSegmentedControl.selectedSegmentIndex == 1 {
             
-            handleRegister()
+            registerSegmentTapped()
         } else {
             
-            handleLogin()
+            loginSegmentTapped()
         }
     }
 }

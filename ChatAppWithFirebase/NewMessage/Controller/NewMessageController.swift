@@ -32,7 +32,7 @@ class NewMessageController: UITableViewController {
     
     func setupNavigationBarButtons() {
         
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Cancel", style: .plain, target: self, action: #selector(handleCancel))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Cancel", style: .plain, target: self, action: #selector(cancelBarButtonTapped))
     }
     
     
@@ -68,7 +68,7 @@ class NewMessageController: UITableViewController {
     }
     
     
-    @objc func handleCancel() {
+    @objc func cancelBarButtonTapped() {
         
         dismiss(animated: true, completion: nil)
     }

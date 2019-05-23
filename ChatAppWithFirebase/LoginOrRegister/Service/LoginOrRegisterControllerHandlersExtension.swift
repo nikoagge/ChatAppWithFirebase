@@ -15,7 +15,7 @@ import Firebase
 extension LoginOrRegisterController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     
-    func handleLogin() {
+    func loginSegmentTapped() {
         
         guard let email = emailTextField.text, let password = passwordTextField.text else {
             
@@ -40,7 +40,7 @@ extension LoginOrRegisterController: UIImagePickerControllerDelegate, UINavigati
     }
     
     
-    func handleRegister() {
+    func registerSegmentTapped() {
         
         guard let email = emailTextField.text, let password = passwordTextField.text, let name = nameTextField.text else {
             
@@ -128,7 +128,7 @@ extension LoginOrRegisterController: UIImagePickerControllerDelegate, UINavigati
     }
     
     
-    @objc func handleLoginOrRegisterSegmentedControlClicked() {
+    @objc func loginOrRegisterSegmentedControlClicked() {
         
         loginRegisterButton.setTitle(loginOrRegisterSegmentedControl.titleForSegment(at: loginOrRegisterSegmentedControl.selectedSegmentIndex), for: .normal)
         
@@ -154,7 +154,7 @@ extension LoginOrRegisterController: UIImagePickerControllerDelegate, UINavigati
     }
     
     
-    @objc func handleProfileImageView() {
+    @objc func profileImageViewTapped() {
         
         let imagePickerController = UIImagePickerController()
         imagePickerController.delegate = self
