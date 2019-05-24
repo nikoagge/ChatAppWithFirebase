@@ -54,7 +54,7 @@ class NewMessageController: UITableViewController {
                 if let childDictionary = child.value as? NSDictionary {
                     
                     let user = User()
-                    user.id = databaseSnapshot.key
+                    user.id = child.key
                     user.name = childDictionary["name"] as? String
                     user.email = childDictionary["email"] as? String
                     user.profileImageURL = childDictionary["profileImageURL"] as? String

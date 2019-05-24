@@ -8,10 +8,46 @@
 
 
 import UIKit
+import Firebase
 
 
 class UserCell: UITableViewCell {
 
+    
+    var message: Message? {
+        
+        didSet {
+            
+            if let toReceiverUserId = message?.toReceiverUserId {
+                
+                let firebaseDatRef = Database.database().reference().child("users").child(toReceiverUserId)
+                firebaseDatRef.observe(.value) { (dataSnapshot) in
+                    
+                    guard let dictionaryOfValues = dataSnapshot.value as? [String: AnyObject] else { return }
+                    
+                    self.textLabel?.text = dictionaryOfValues["name"] as? String
+                    
+                    guard let profileImageURL = dictionaryOfValues["profileImageURL"] as? String else { return }
+                    
+                    self.profileImageView.loadImageUsingCache(withURLString: profileImageURL)
+                }
+            }
+            
+            detailTextLabel?.text = message?.text
+            
+            guard let seconds = message?.timestamp?.doubleValue else { return }
+            
+            
+            let timestampDate = NSDate(timeIntervalSince1970: seconds)
+            
+            //To give the date format I want, I do this:
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "hh:mm:ss a"
+            
+            timeLabel.text = dateFormatter.string(from: timestampDate as Date)
+        }
+    }
+    
     
     override func layoutSubviews() {
         
@@ -37,6 +73,17 @@ class UserCell: UITableViewCell {
         return piv
     }()
     
+    let timeLabel: UILabel = {
+        
+        let tl = UILabel()
+        tl.text = "HH:MM:SS"
+        tl.translatesAutoresizingMaskIntoConstraints = false
+        tl.font = UIFont.systemFont(ofSize: 12)
+        tl.textColor = .lightGray
+        
+        return tl
+    }()
+    
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         
@@ -55,11 +102,18 @@ class UserCell: UITableViewCell {
     func setupViews() {
         
         addSubview(profileImageView)
-        
+        addSubview(timeLabel)
         //Define x, y, width, height anchors:
         profileImageView.leftAnchor.constraint(equalTo: self.leftAnchor, constant: 8).isActive = true
         profileImageView.centerYAnchor.constraint(equalTo: self.centerYAnchor).isActive = true
         profileImageView.widthAnchor.constraint(equalToConstant: 48).isActive = true
         profileImageView.heightAnchor.constraint(equalToConstant: 48).isActive = true
+        
+        
+        //Define x, y, width, height constraints for timeLabel:
+        timeLabel.rightAnchor.constraint(equalTo: self.rightAnchor).isActive = true
+        timeLabel.centerYAnchor.constraint(equalTo: self.topAnchor, constant: 18).isActive = true
+        timeLabel.widthAnchor.constraint(equalToConstant: 100)
+        timeLabel.heightAnchor.constraint(equalTo: textLabel!.heightAnchor).isActive = true
     }
 }

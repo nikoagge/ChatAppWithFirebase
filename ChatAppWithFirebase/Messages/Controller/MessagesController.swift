@@ -16,6 +16,9 @@ class MessagesController: UITableViewController {
     
     var messages = [Message]()
     
+    //Use this in order to have one message per user. Actually the most recent message:
+    var messagesDictionary = [String: Message]()
+    
     var cellIdentifier = "cellId"
     
     
@@ -33,6 +36,7 @@ class MessagesController: UITableViewController {
     func setupTableView() {
         
         tableView.tableFooterView = UIView()
+        tableView.register(UserCell.self, forCellReuseIdentifier: cellIdentifier)
     }
     
     
@@ -97,11 +101,25 @@ class MessagesController: UITableViewController {
             message.fromSenderUserId = dictionaryOfValues["fromSenderUserId"] as? String
             message.name = dictionaryOfValues["name"] as? String
             message.text = dictionaryOfValues["text"] as? String
-            message.timestamp = dictionaryOfValues["timestamp"] as? Int
+            message.timestamp = dictionaryOfValues["timestamp"] as? NSNumber
             message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
             
-            self.messages.append(message)
+            guard let safelyUnwrappedToReceiverUserId = message.toReceiverUserId else { return }
             
+            //self.messages.append(message)
+            
+            self.messagesDictionary[safelyUnwrappedToReceiverUserId] = message
+            
+            self.messages = Array(self.messagesDictionary.values)
+            
+            //That's to sort messages by time ascending orded.
+            self.messages.sort(by: { (firstMessage, secondmessage) -> Bool in
+
+                guard let safelyUnwrappedFirstTimestamp = firstMessage.timestamp, let safelyUnwrappedSecondTimestamp = secondmessage.timestamp else { return false }
+                //For ascending order:
+                return safelyUnwrappedFirstTimestamp.intValue > safelyUnwrappedSecondTimestamp.intValue
+            })
+         
             //In order not to crash because of background thread, run this on main thread:
             DispatchQueue.main.async {
                 
@@ -122,6 +140,7 @@ class MessagesController: UITableViewController {
                 //self.navigationItem.title = dictionaryOfValues["name"] as? String
                 
                 let user = User()
+                user.id = userId
                 user.email = dictionaryOfValues["email"] as? String
                 user.name = dictionaryOfValues["name"] as? String
                 user.profileImageURL = dictionaryOfValues["profileImageURL"] as? String
@@ -197,11 +216,23 @@ class MessagesController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: cellIdentifier)
-        cell.textLabel?.text = messages[indexPath.row].name
-        cell.detailTextLabel?.text = messages[indexPath.row].text
+        //Hack for tableView's cell
+        //let cell = UITableViewCell(style: .subtitle, reuseIdentifier: cellIdentifier)
+        
+        //The proper way to create tableView's cell:
+        let cell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier, for: indexPath) as! UserCell
+        
+        let message = messages[indexPath.row]
+        
+        cell.message = message
         
         return cell
+    }
+    
+    
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        
+        return 72
     }
 }
 

@@ -109,7 +109,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate {
         let firebaseDatRef = Database.database().reference().child("messages")
         let childRef = firebaseDatRef.childByAutoId()
         
-        guard let safelyUnwrappedInputMessageText = inputMessageTextField.text, let safelyUnwrappedUserName = user?.name, let safelyUnwrappedToReceiverUserId = user?.id, let safelyUnwrappedFromSenderUserId = Auth.auth().currentUser?.uid else { return }
+        guard let safelyUnwrappedInputMessageText = inputMessageTextField.text, let safelyUnwrappedUserName = user?.name, let safelyUnwrappedToReceiverUserId = user!.id, let safelyUnwrappedFromSenderUserId = Auth.auth().currentUser?.uid else { return }
         
         let timestamp = Int(NSDate().timeIntervalSince1970)
         

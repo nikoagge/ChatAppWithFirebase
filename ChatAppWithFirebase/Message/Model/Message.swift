@@ -16,6 +16,6 @@ class Message: NSObject {
     var fromSenderUserId: String?
     var name: String?
     var text: String?
-    var timestamp: Int?
+    var timestamp: NSNumber?
     var toReceiverUserId: String?
 }
