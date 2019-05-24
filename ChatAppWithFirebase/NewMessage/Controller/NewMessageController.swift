@@ -18,6 +18,8 @@ class NewMessageController: UITableViewController {
     
     var users = [User]()
     
+    var messagesController: MessagesController?
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -32,7 +34,7 @@ class NewMessageController: UITableViewController {
     
     func setupNavigationBarButtons() {
         
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Cancel", style: .plain, target: self, action: #selector(handleCancel))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Cancel", style: .plain, target: self, action: #selector(cancelBarButtonTapped))
     }
     
     
@@ -52,8 +54,10 @@ class NewMessageController: UITableViewController {
                 if let childDictionary = child.value as? NSDictionary {
                     
                     let user = User()
+                    user.id = child.key
                     user.name = childDictionary["name"] as? String
                     user.email = childDictionary["email"] as? String
+                    user.profileImageURL = childDictionary["profileImageURL"] as? String
                     self.users.append(user)
                     
                     //In order not to crash because of background thread, use DispatchQueue.main.async to fix.
@@ -67,9 +71,38 @@ class NewMessageController: UITableViewController {
     }
     
     
-    @objc func handleCancel() {
+    @objc func cancelBarButtonTapped() {
         
         dismiss(animated: true, completion: nil)
+    }
+    
+    
+    func downloadImageData(withUser user: User) -> Data {
+        
+        var returnedData = Data()
+        guard let profileImageURLString = user.profileImageURL else { return returnedData }
+        
+        let url = URL(string: profileImageURLString)
+        
+        guard let safelyUnwrappedURL = url else { return  returnedData }
+        
+        URLSession.shared.dataTask(with: safelyUnwrappedURL) { (data, response, error) in
+            
+            if error != nil {
+                
+                print(error)
+                
+                return
+            }
+            
+            DispatchQueue.main.async {
+                
+                returnedData = data!
+            }
+            
+        }.resume()
+        
+        return returnedData
     }
     
     
@@ -83,13 +116,32 @@ class NewMessageController: UITableViewController {
         
         //A little hack, the right solution is to dequeue cells for memory efficiency.
         //let cell = UITableViewCell(style: .subtitle, reuseIdentifier: cellIdentifier)
-        let cell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier, for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier, for: indexPath) as! UserCell
         
         let user = users[indexPath.row]
         
-        cell.textLabel?.text = user.name
+        cell.textLabel!.text = user.name
         cell.detailTextLabel?.text = user.email
-        
+        if let profileImageURLString = user.profileImageURL {
+            cell.profileImageView.loadImageUsingCache(withURLString: profileImageURLString)
+        }
+    
         return cell 
+    }
+    
+    
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        
+        return 72
+    }
+    
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        dismiss(animated: true) {
+            
+            let user = self.users[indexPath.row]
+            self.messagesController?.displayChatLogController(forUser: user)
+        }
     }
 }
