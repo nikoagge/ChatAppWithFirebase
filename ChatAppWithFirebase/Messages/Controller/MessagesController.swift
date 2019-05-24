@@ -29,7 +29,7 @@ class MessagesController: UITableViewController {
         setupTableView()
         setupNavigationBarButtons()
         checkIfUserIsLoggedIn()
-        observeMessages()
+        //observeMessages()
     }
     
     
@@ -129,6 +129,54 @@ class MessagesController: UITableViewController {
     }
     
     
+    func observeUserMessages() {
+        
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        let ref = Database.database().reference().child("user-messages").child(uid)
+        
+        ref.observe(.childAdded) { (dataSnapshot) in
+            
+            let messageId = dataSnapshot.key
+            
+            let messagesReference = Database.database().reference().child("messages").child(messageId)
+            messagesReference.observeSingleEvent(of: .value, with: { (anotherSnapshot) in
+                
+                guard let dictionaryOfValues = anotherSnapshot.value as? [String: AnyObject] else { return }
+
+                let message = Message()
+                message.fromSenderUserId = dictionaryOfValues["fromSenderUserId"] as? String
+                message.name = dictionaryOfValues["name"] as? String
+                message.text = dictionaryOfValues["text"] as? String
+                message.timestamp = dictionaryOfValues["timestamp"] as? NSNumber
+                message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
+
+                guard let safelyUnwrappedToReceiverUserId = message.toReceiverUserId else { return }
+
+                //self.messages.append(message)
+
+                self.messagesDictionary[safelyUnwrappedToReceiverUserId] = message
+
+                self.messages = Array(self.messagesDictionary.values)
+
+                //That's to sort messages by time ascending orded.
+                self.messages.sort(by: { (firstMessage, secondmessage) -> Bool in
+
+                    guard let safelyUnwrappedFirstTimestamp = firstMessage.timestamp, let safelyUnwrappedSecondTimestamp = secondmessage.timestamp else { return false }
+                    //For ascending order:
+                    return safelyUnwrappedFirstTimestamp.intValue > safelyUnwrappedSecondTimestamp.intValue
+                })
+
+                //In order not to crash because of background thread, run this on main thread:
+                DispatchQueue.main.async {
+
+                    self.tableView.reloadData()
+                }
+            })
+        }
+    }
+    
+    
     func fetchUserFromFirebaseAndSetupNavigationBarTitle() {
         
         guard let userId = Auth.auth().currentUser?.uid else { return }
@@ -153,6 +201,14 @@ class MessagesController: UITableViewController {
     
     
     func setupNavigationBarTitleView(withUser user: User) {
+        
+        messages.removeAll()
+        
+        messagesDictionary.removeAll()
+        
+        tableView.reloadData()
+        
+        observeUserMessages()
         
         let titleView = UIView()
         titleView.frame = CGRect(x: 0, y: 0, width: 100, height: 40)

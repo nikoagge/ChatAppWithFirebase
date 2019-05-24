@@ -91,7 +91,7 @@ class LoginOrRegisterController: UIViewController {
     lazy var profileImageView: UIImageView = {
         
         let piv = UIImageView()
-        piv.image = UIImage(named: "gameofthrones_splash")
+        piv.image = UIImage(named: "camera_icon")
         piv.translatesAutoresizingMaskIntoConstraints = false
         //Fix aspect ratio of image:
         piv.contentMode = .scaleAspectFill

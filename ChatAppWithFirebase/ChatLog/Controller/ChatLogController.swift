@@ -115,7 +115,24 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate {
         
         let dictionaryOfValues = ["text": safelyUnwrappedInputMessageText, "name": safelyUnwrappedUserName, "fromSenderUserId": safelyUnwrappedFromSenderUserId, "toReceiverUserId": safelyUnwrappedToReceiverUserId, "timestamp": timestamp] as [String : Any]
         
-        childRef.updateChildValues(dictionaryOfValues)
+        //childRef.updateChildValues(dictionaryOfValues)
+        childRef.setValue(dictionaryOfValues) { (error, databaseRef) in
+            
+            if error != nil {
+                
+                print(error)
+                
+                return
+            }
+            
+            //With this reference I create a subfolder user-messages for every sender((safelyUnwrappedFromSenderUserId):
+            guard let messageId = childRef.key else { return }
+            let senderUserMessagesRef = Database.database().reference().child("user-messages").child(safelyUnwrappedFromSenderUserId).child(messageId)
+            senderUserMessagesRef.setValue([safelyUnwrappedFromSenderUserId: 1])
+            
+            let receiverUserMessagesRef = Database.database().reference().child("user-messages").child(safelyUnwrappedToReceiverUserId).child(messageId)
+            receiverUserMessagesRef.setValue([safelyUnwrappedToReceiverUserId: 1])
+        }
     }
     
     

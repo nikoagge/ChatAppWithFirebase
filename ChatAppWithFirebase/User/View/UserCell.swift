@@ -18,20 +18,7 @@ class UserCell: UITableViewCell {
         
         didSet {
             
-            if let toReceiverUserId = message?.toReceiverUserId {
-                
-                let firebaseDatRef = Database.database().reference().child("users").child(toReceiverUserId)
-                firebaseDatRef.observe(.value) { (dataSnapshot) in
-                    
-                    guard let dictionaryOfValues = dataSnapshot.value as? [String: AnyObject] else { return }
-                    
-                    self.textLabel?.text = dictionaryOfValues["name"] as? String
-                    
-                    guard let profileImageURL = dictionaryOfValues["profileImageURL"] as? String else { return }
-                    
-                    self.profileImageView.loadImageUsingCache(withURLString: profileImageURL)
-                }
-            }
+            setupNameAndProfileImage()
             
             detailTextLabel?.text = message?.text
             
@@ -76,7 +63,7 @@ class UserCell: UITableViewCell {
     let timeLabel: UILabel = {
         
         let tl = UILabel()
-        tl.text = "HH:MM:SS"
+//        tl.text = "HH:MM:SS"
         tl.translatesAutoresizingMaskIntoConstraints = false
         tl.font = UIFont.systemFont(ofSize: 12)
         tl.textColor = .lightGray
@@ -115,5 +102,34 @@ class UserCell: UITableViewCell {
         timeLabel.centerYAnchor.constraint(equalTo: self.topAnchor, constant: 18).isActive = true
         timeLabel.widthAnchor.constraint(equalToConstant: 100)
         timeLabel.heightAnchor.constraint(equalTo: textLabel!.heightAnchor).isActive = true
+    }
+    
+    
+    private func setupNameAndProfileImage() {
+        
+        let chatPartnerId: String?
+        
+        if message?.fromSenderUserId == Auth.auth().currentUser?.uid {
+            
+            chatPartnerId = message?.toReceiverUserId
+        } else {
+            
+            chatPartnerId = message?.fromSenderUserId
+        }
+        
+        if let userId = chatPartnerId {
+            
+            let firebaseDatRef = Database.database().reference().child("users").child(userId)
+            firebaseDatRef.observe(.value) { (dataSnapshot) in
+                
+                guard let dictionaryOfValues = dataSnapshot.value as? [String: AnyObject] else { return }
+                
+                self.textLabel?.text = dictionaryOfValues["name"] as? String
+                
+                guard let profileImageURL = dictionaryOfValues["profileImageURL"] as? String else { return }
+                
+                self.profileImageView.loadImageUsingCache(withURLString: profileImageURL)
+            }
+        }
     }
 }
