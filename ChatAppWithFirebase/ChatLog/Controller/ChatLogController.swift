@@ -215,6 +215,32 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     }
     
     
+    private func setupChatLogCell(forChatLogCell chatLogCell: ChatLogCell, forMessage message: Message) {
+        
+        guard let profileImageURL = self.user?.profileImageURL else { return }
+        
+        chatLogCell.profileImageView.loadImageUsingCache(withURLString: profileImageURL)
+        
+        if message.fromSenderUserId == Auth.auth().currentUser?.uid {
+            
+            //Outgoing message
+            chatLogCell.bubbleView.backgroundColor = ChatLogCell.blueColor
+            chatLogCell.textView.textColor = .white
+            chatLogCell.profileImageView.isHidden = true
+            chatLogCell.bubbleViewRightAnchor?.isActive = true
+            chatLogCell.bubbleViewLeftAnchor?.isActive = false
+        } else {
+            
+            //Incoming message
+            chatLogCell.bubbleView.backgroundColor = UIColor.rgb(ofRed: 240, ofGreen: 240, ofBlue: 240)
+            chatLogCell.textView.textColor = .black
+            chatLogCell.profileImageView.isHidden = false
+            chatLogCell.bubbleViewRightAnchor?.isActive = false
+            chatLogCell.bubbleViewLeftAnchor?.isActive = true
+        }
+    }
+    
+    
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         
         return messages.count
@@ -225,6 +251,9 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellIdentifier, for: indexPath) as! ChatLogCell
         cell.textView.text = messages[indexPath.item].text
+        
+        setupChatLogCell(forChatLogCell: cell, forMessage: messages[indexPath.item])
+        
         cell.bubbleViewWidthAnchor?.constant = estimateFrame(forText: messages[indexPath.item].text!).width + 32 //Arbitrary add 32 pixels to add some more space so to display the whole textView.
         
         return cell

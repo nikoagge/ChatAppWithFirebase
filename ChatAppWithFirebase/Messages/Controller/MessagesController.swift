@@ -21,6 +21,8 @@ class MessagesController: UITableViewController {
     
     var cellIdentifier = "cellId"
     
+    var timer: Timer?
+    
     
     override func viewDidLoad() {
         
@@ -167,13 +169,13 @@ class MessagesController: UITableViewController {
                 })
                 //self.messages.append(message)
 
+                self.timer?.invalidate()
+                self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.handleReloadTableView), userInfo: nil, repeats: false)
                 
-
-                //In order not to crash because of background thread, run this on main thread:
-                DispatchQueue.main.async {
-
-                    self.tableView.reloadData()
-                }
+//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: {
+//
+//                    self.tableView.reloadData()
+//                })
             })
         }
     }
@@ -259,6 +261,16 @@ class MessagesController: UITableViewController {
         let chatLogController = ChatLogController(collectionViewLayout: layout)
         chatLogController.user = user
         navigationController?.pushViewController(chatLogController, animated: true)
+    }
+    
+    
+    @objc func handleReloadTableView() {
+        
+        //In order not to crash because of background thread, run this on main thread:
+        DispatchQueue.main.async {
+            print("test")
+            self.tableView.reloadData()
+        }
     }
     
     
