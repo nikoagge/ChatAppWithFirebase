@@ -18,8 +18,6 @@ class UserCell: UITableViewCell {
         
         didSet {
             
-            setupNameAndProfileImage()
-            
             detailTextLabel?.text = message?.text
             
             guard let seconds = message?.timestamp?.doubleValue else { return }
@@ -32,6 +30,8 @@ class UserCell: UITableViewCell {
             dateFormatter.dateFormat = "hh:mm:ss a"
             
             timeLabel.text = dateFormatter.string(from: timestampDate as Date)
+            
+            setupNameAndProfileImage()
         }
     }
     
@@ -90,6 +90,7 @@ class UserCell: UITableViewCell {
         
         addSubview(profileImageView)
         addSubview(timeLabel)
+        
         //Define x, y, width, height anchors:
         profileImageView.leftAnchor.constraint(equalTo: self.leftAnchor, constant: 8).isActive = true
         profileImageView.centerYAnchor.constraint(equalTo: self.centerYAnchor).isActive = true
@@ -107,27 +108,17 @@ class UserCell: UITableViewCell {
     
     private func setupNameAndProfileImage() {
         
-        let chatPartnerId: String?
-        
-        if message?.fromSenderUserId == Auth.auth().currentUser?.uid {
-            
-            chatPartnerId = message?.toReceiverUserId
-        } else {
-            
-            chatPartnerId = message?.fromSenderUserId
-        }
-        
-        if let userId = chatPartnerId {
+        if let userId = message?.chatPartnerId() {
             
             let firebaseDatRef = Database.database().reference().child("users").child(userId)
-            firebaseDatRef.observe(.value) { (dataSnapshot) in
+            firebaseDatRef.observeSingleEvent(of: .value) { (dataSnapshot) in
                 
                 guard let dictionaryOfValues = dataSnapshot.value as? [String: AnyObject] else { return }
-                
+
                 self.textLabel?.text = dictionaryOfValues["name"] as? String
-                
+
                 guard let profileImageURL = dictionaryOfValues["profileImageURL"] as? String else { return }
-                
+
                 self.profileImageView.loadImageUsingCache(withURLString: profileImageURL)
             }
         }

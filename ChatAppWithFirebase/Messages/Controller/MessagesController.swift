@@ -15,7 +15,7 @@ class MessagesController: UITableViewController {
     
     
     var messages = [Message]()
-    
+
     //Use this in order to have one message per user. Actually the most recent message:
     var messagesDictionary = [String: Message]()
     
@@ -152,20 +152,22 @@ class MessagesController: UITableViewController {
                 message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
 
                 guard let safelyUnwrappedToReceiverUserId = message.toReceiverUserId else { return }
-
-                //self.messages.append(message)
-
+                
+                
                 self.messagesDictionary[safelyUnwrappedToReceiverUserId] = message
-
+                
                 self.messages = Array(self.messagesDictionary.values)
-
+                
                 //That's to sort messages by time ascending orded.
                 self.messages.sort(by: { (firstMessage, secondmessage) -> Bool in
-
+                    
                     guard let safelyUnwrappedFirstTimestamp = firstMessage.timestamp, let safelyUnwrappedSecondTimestamp = secondmessage.timestamp else { return false }
                     //For ascending order:
                     return safelyUnwrappedFirstTimestamp.intValue > safelyUnwrappedSecondTimestamp.intValue
                 })
+                //self.messages.append(message)
+
+                
 
                 //In order not to crash because of background thread, run this on main thread:
                 DispatchQueue.main.async {
@@ -181,22 +183,19 @@ class MessagesController: UITableViewController {
         
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
-        Database.database().reference().child("users").child(userId).observeSingleEvent(of: .value, with: { (dataSnapshot) in
+    Database.database().reference().child("users").child(userId).observeSingleEvent(of: .value) { (dataSnapshot) in
             
-            if let dictionaryOfValues = dataSnapshot.value as? [String: AnyObject] {
-                
-                //self.navigationItem.title = dictionaryOfValues["name"] as? String
-                
-                let user = User()
-                user.id = userId
-                user.email = dictionaryOfValues["email"] as? String
-                user.name = dictionaryOfValues["name"] as? String
-                user.profileImageURL = dictionaryOfValues["profileImageURL"] as? String
-                //user.setValuesForKeys(dictionaryOfValues)
-                
-                self.setupNavigationBarTitleView(withUser: user)
-            }
-        }, withCancel: nil)
+            guard let dictionaryOfValues = dataSnapshot.value as? [String: AnyObject] else { return }
+            
+            let user = User()
+            user.id = userId
+            user.email = dictionaryOfValues["email"] as? String
+            user.name = dictionaryOfValues["name"] as? String
+            user.profileImageURL = dictionaryOfValues["profileImageURL"] as? String
+                            //user.setValuesForKeys(dictionaryOfValues)
+            
+            self.setupNavigationBarTitleView(withUser: user)
+        }
     }
     
     
@@ -228,7 +227,6 @@ class MessagesController: UITableViewController {
         
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
-        
         
         self.navigationItem.titleView = titleView
         titleView.addSubview(containerView)
@@ -289,6 +287,28 @@ class MessagesController: UITableViewController {
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         
         return 72
+    }
+    
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        let message = messages[indexPath.row]
+        
+        guard let chatPartnerId = message.chatPartnerId() else { return }
+        
+        let reference = Database.database().reference().child("users").child(chatPartnerId)
+        reference.observeSingleEvent(of: .value) { (dataSnapshot) in
+            
+            guard let dictionaryOfValues = dataSnapshot.value as? [String: AnyObject] else { return }
+            
+            let user = User()
+            user.id = chatPartnerId
+            user.email = dictionaryOfValues["email"] as? String
+            user.name = dictionaryOfValues["name"] as? String
+            user.profileImageURL = dictionaryOfValues["profileImageURL"] as? String
+            
+            self.displayChatLogController(forUser: user)
+        }
     }
 }
 

@@ -11,12 +11,14 @@ import UIKit
 import Firebase
 
 
-class ChatLogController: UICollectionViewController, UITextFieldDelegate {
+//Declare UICollectionViewDelegateFlowLayout in order to set the size of each collectionView's cell.
+class ChatLogController: UICollectionViewController, UITextFieldDelegate, UICollectionViewDelegateFlowLayout {
 
     
     let containerView: UIView = {
        
         let cv = UIView()
+        cv.backgroundColor = .white
         cv.translatesAutoresizingMaskIntoConstraints = false
         
         return cv
@@ -56,17 +58,22 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate {
         didSet {
             
             navigationItem.title = user?.name
+            
+            observeUserMessages()
         }
     }
+    
+    var messages = [Message]()
+    
+    let cellIdentifier = "cellId"
     
     
     override func viewDidLoad() {
         
         super.viewDidLoad()
         
-        collectionView.backgroundColor = .white
-        
         setupInputComponents()
+        setupCollectionView()
     }
     
     
@@ -101,6 +108,15 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate {
         separatorLineView.topAnchor.constraint(equalTo: containerView.topAnchor).isActive = true
         separatorLineView.widthAnchor.constraint(equalTo: containerView.widthAnchor).isActive = true
         separatorLineView.heightAnchor.constraint(equalToConstant: 1).isActive = true
+    }
+    
+    
+    func setupCollectionView() {
+        
+        //In order to the collectionView bounces vertical:
+        collectionView.alwaysBounceVertical = true
+        collectionView.backgroundColor = .white
+        collectionView.register(ChatLogCell.self, forCellWithReuseIdentifier: cellIdentifier)
     }
     
     
@@ -142,5 +158,64 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate {
         sendButtonTapped()
         
         return true
+    }
+    
+    
+    func observeUserMessages() {
+        
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        let userMessagesReference = Database.database().reference().child("user-messages").child(userId)
+        userMessagesReference.observe(.childAdded) { (dataSnapshot) in
+            
+            let messageId = dataSnapshot.key
+            
+            let messagesReference = Database.database().reference().child("messages").child(messageId)
+            messagesReference.observeSingleEvent(of: .value, with: { (dataSnapshot) in
+                
+                guard let dictionaryOfValues = dataSnapshot.value as? [String: AnyObject] else { return }
+                
+                let message = Message()
+                message.fromSenderUserId = dictionaryOfValues["fromSenderUserId"] as? String
+                message.name = dictionaryOfValues["name"] as? String
+                message.text = dictionaryOfValues["text"] as? String
+                message.timestamp = dictionaryOfValues["timestamp"] as? NSNumber
+                message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
+                
+                //In order not to display irrelevant-messages of other users:
+                if message.chatPartnerId() == self.user?.id {
+                    
+                    self.messages.append(message)
+                    
+                    //Because I 'm in background thread, I call DispatchQueue.main.async
+                    DispatchQueue.main.async {
+                        
+                        self.collectionView.reloadData()
+                    }
+                }
+            })
+        }
+    }
+    
+    
+    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        
+        return messages.count
+    }
+    
+    
+    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellIdentifier, for: indexPath) as! ChatLogCell
+        cell.textView.text = messages[indexPath.item].text
+        
+        
+        return cell
+    }
+    
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        
+        return CGSize(width: view.frame.width, height: 80)
     }
 }
