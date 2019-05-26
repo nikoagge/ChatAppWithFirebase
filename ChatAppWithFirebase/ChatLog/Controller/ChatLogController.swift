@@ -117,6 +117,10 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         collectionView.alwaysBounceVertical = true
         collectionView.backgroundColor = .white
         collectionView.register(ChatLogCell.self, forCellWithReuseIdentifier: cellIdentifier)
+        //In order to set some extra padding to the collectionView's cell:
+        collectionView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 58, right: 0)
+        //Also need to change scrollIndicatorInsets:
+        collectionView.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: 50, right: 0)
     }
     
     
@@ -132,7 +136,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         let dictionaryOfValues = ["text": safelyUnwrappedInputMessageText, "name": safelyUnwrappedUserName, "fromSenderUserId": safelyUnwrappedFromSenderUserId, "toReceiverUserId": safelyUnwrappedToReceiverUserId, "timestamp": timestamp] as [String : Any]
         
         //childRef.updateChildValues(dictionaryOfValues)
-        childRef.setValue(dictionaryOfValues) { (error, databaseRef) in
+        childRef.updateChildValues(dictionaryOfValues) { (error, databaseRef) in
             
             if error != nil {
                 
@@ -140,6 +144,9 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
                 
                 return
             }
+            
+            //In order to clear the inputMessageTextField everytime I send a new message:
+            self.inputMessageTextField.text = nil
             
             //With this reference I create a subfolder user-messages for every sender((safelyUnwrappedFromSenderUserId):
             guard let messageId = childRef.key else { return }
@@ -198,6 +205,16 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     }
     
     
+    private func estimateFrame(forText text: String) -> CGRect {
+        
+        //Set value of height arbitrary very large, and the width equal to the widthAnchor of textView as it's set on ChatLogCell's relevant function:
+        let size = CGSize(width: 200, height: 1300)
+        
+        //Font set it as it's set on textView on ChatLogCell
+        return NSString(string: text).boundingRect(with: size, options: [.usesLineFragmentOrigin, .usesFontLeading], attributes: [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 16)], context: nil)
+    }
+    
+    
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         
         return messages.count
@@ -208,7 +225,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellIdentifier, for: indexPath) as! ChatLogCell
         cell.textView.text = messages[indexPath.item].text
-        
+        cell.bubbleViewWidthAnchor?.constant = estimateFrame(forText: messages[indexPath.item].text!).width + 32 //Arbitrary add 32 pixels to add some more space so to display the whole textView.
         
         return cell
     }
@@ -216,6 +233,20 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         
+        var height: CGFloat = 80
+        
+        if let text = messages[indexPath.item].text {
+            
+            height = estimateFrame(forText: text).height + 20 //Add some extra more space
+        }
+        
         return CGSize(width: view.frame.width, height: 80)
+    }
+    
+    
+    //In order cells be displayed properly everytime the device rotates:
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        
+        collectionView.collectionViewLayout.invalidateLayout()
     }
 }

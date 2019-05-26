@@ -122,6 +122,7 @@
 		176AC8722295B9AE009D5271 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				1720962E2299A08E002D9D70 /* ChatLogCell.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -129,7 +130,6 @@
 		176AC8732295B9B3009D5271 /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				1720962E2299A08E002D9D70 /* ChatLogCell.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";

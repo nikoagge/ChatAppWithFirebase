@@ -151,10 +151,10 @@ class MessagesController: UITableViewController {
                 message.timestamp = dictionaryOfValues["timestamp"] as? NSNumber
                 message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
 
-                guard let safelyUnwrappedToReceiverUserId = message.toReceiverUserId else { return }
+                guard let safelyUnwrappedChatPartnerId = message.chatPartnerId() else { return }
                 
                 
-                self.messagesDictionary[safelyUnwrappedToReceiverUserId] = message
+                self.messagesDictionary[safelyUnwrappedChatPartnerId] = message
                 
                 self.messages = Array(self.messagesDictionary.values)
                 
