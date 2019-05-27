@@ -139,43 +139,13 @@ class MessagesController: UITableViewController {
         
         ref.observe(.childAdded) { (dataSnapshot) in
             
-            let messageId = dataSnapshot.key
+            let userId = dataSnapshot.key
             
-            let messagesReference = Database.database().reference().child("messages").child(messageId)
-            messagesReference.observeSingleEvent(of: .value, with: { (anotherSnapshot) in
+            Database.database().reference().child("user-messages").child(uid).child(userId).observe(.childAdded, with: { (dataSnapshot) in
                 
-                guard let dictionaryOfValues = anotherSnapshot.value as? [String: AnyObject] else { return }
-
-                let message = Message()
-                message.fromSenderUserId = dictionaryOfValues["fromSenderUserId"] as? String
-                message.name = dictionaryOfValues["name"] as? String
-                message.text = dictionaryOfValues["text"] as? String
-                message.timestamp = dictionaryOfValues["timestamp"] as? NSNumber
-                message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
-
-                guard let safelyUnwrappedChatPartnerId = message.chatPartnerId() else { return }
+                let messageId = dataSnapshot.key
                 
-                
-                self.messagesDictionary[safelyUnwrappedChatPartnerId] = message
-                
-                self.messages = Array(self.messagesDictionary.values)
-                
-                //That's to sort messages by time ascending orded.
-                self.messages.sort(by: { (firstMessage, secondmessage) -> Bool in
-                    
-                    guard let safelyUnwrappedFirstTimestamp = firstMessage.timestamp, let safelyUnwrappedSecondTimestamp = secondmessage.timestamp else { return false }
-                    //For ascending order:
-                    return safelyUnwrappedFirstTimestamp.intValue > safelyUnwrappedSecondTimestamp.intValue
-                })
-                //self.messages.append(message)
-
-                self.timer?.invalidate()
-                self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.handleReloadTableView), userInfo: nil, repeats: false)
-                
-//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: {
-//
-//                    self.tableView.reloadData()
-//                })
+                self.fetchMessage(forMessageId: messageId)
             })
         }
     }
@@ -254,6 +224,46 @@ class MessagesController: UITableViewController {
     }
     
     
+    private func attemptReloadOfTableView() {
+        
+        self.timer?.invalidate()
+        self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.handleReloadTableView), userInfo: nil, repeats: false)
+    }
+    
+    
+    private func fetchMessage(forMessageId messageId: String) {
+        
+        let messagesReference = Database.database().reference().child("messages").child(messageId)
+        messagesReference.observeSingleEvent(of: .value, with: { (anotherSnapshot) in
+            
+            guard let dictionaryOfValues = anotherSnapshot.value as? [String: AnyObject] else { return }
+            
+            let message = Message()
+            message.fromSenderUserId = dictionaryOfValues["fromSenderUserId"] as? String
+            message.name = dictionaryOfValues["name"] as? String
+            message.text = dictionaryOfValues["text"] as? String
+            message.timestamp = dictionaryOfValues["timestamp"] as? NSNumber
+            message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
+            
+            guard let safelyUnwrappedChatPartnerId = message.chatPartnerId() else { return }
+            
+            
+            self.messagesDictionary[safelyUnwrappedChatPartnerId] = message
+            
+            //self.messages.append(message)
+            
+            self.attemptReloadOfTableView()
+            
+            
+            
+            //                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: {
+            //
+            //                    self.tableView.reloadData()
+            //                })
+        })
+    }
+    
+    
     @objc func displayChatLogController(forUser user: User) {
         
         let layout = UICollectionViewFlowLayout()
@@ -265,6 +275,16 @@ class MessagesController: UITableViewController {
     
     
     @objc func handleReloadTableView() {
+        
+        self.messages = Array(self.messagesDictionary.values)
+        
+        //That's to sort messages by time ascending orded.
+        self.messages.sort(by: { (firstMessage, secondmessage) -> Bool in
+            
+            guard let safelyUnwrappedFirstTimestamp = firstMessage.timestamp, let safelyUnwrappedSecondTimestamp = secondmessage.timestamp else { return false }
+            //For ascending order:
+            return safelyUnwrappedFirstTimestamp.intValue > safelyUnwrappedSecondTimestamp.intValue
+        })
         
         //In order not to crash because of background thread, run this on main thread:
         DispatchQueue.main.async {

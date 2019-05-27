@@ -172,10 +172,10 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
             
             //With this reference I create a subfolder user-messages for every sender((safelyUnwrappedFromSenderUserId):
             guard let messageId = childRef.key else { return }
-            let senderUserMessagesRef = Database.database().reference().child("user-messages").child(safelyUnwrappedFromSenderUserId).child(messageId)
+            let senderUserMessagesRef = Database.database().reference().child("user-messages").child(safelyUnwrappedFromSenderUserId).child(safelyUnwrappedToReceiverUserId).child(messageId)
             senderUserMessagesRef.setValue([safelyUnwrappedFromSenderUserId: 1])
             
-            let receiverUserMessagesRef = Database.database().reference().child("user-messages").child(safelyUnwrappedToReceiverUserId).child(messageId)
+            let receiverUserMessagesRef = Database.database().reference().child("user-messages").child(safelyUnwrappedToReceiverUserId).child(safelyUnwrappedFromSenderUserId).child(messageId)
             receiverUserMessagesRef.setValue([safelyUnwrappedToReceiverUserId: 1])
         }
     }
@@ -220,9 +220,9 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     
     func observeUserMessages() {
         
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let userId = Auth.auth().currentUser?.uid, let toReceiverUserId = user?.id else { return }
         
-        let userMessagesReference = Database.database().reference().child("user-messages").child(userId)
+        let userMessagesReference = Database.database().reference().child("user-messages").child(userId).child(toReceiverUserId)
         userMessagesReference.observe(.childAdded) { (dataSnapshot) in
             
             let messageId = dataSnapshot.key
@@ -239,17 +239,17 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
                 message.timestamp = dictionaryOfValues["timestamp"] as? NSNumber
                 message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
                 
-                //In order not to display irrelevant-messages of other users:
-                if message.chatPartnerId() == self.user?.id {
+                //In order not to display irrelevant-messages of other users, but now we don't need to do this because we have structured our database and specifically user-messages very deeply.
+                //if message.chatPartnerId() == self.user?.id {
                     
-                    self.messages.append(message)
+                self.messages.append(message)
                     
-                    //Because I 'm in background thread, I call DispatchQueue.main.async
-                    DispatchQueue.main.async {
+                //Because I 'm in background thread, I call DispatchQueue.main.async
+                DispatchQueue.main.async {
                         
-                        self.collectionView.reloadData()
-                    }
+                    self.collectionView.reloadData()
                 }
+                //}
             })
         }
     }
