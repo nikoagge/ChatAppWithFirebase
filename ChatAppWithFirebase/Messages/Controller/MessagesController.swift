@@ -99,12 +99,12 @@ class MessagesController: UITableViewController {
             
             guard let dictionaryOfValues = databaseSnapshot.value as? [String: AnyObject] else { return }
             
-            let message = Message()
-            message.fromSenderUserId = dictionaryOfValues["fromSenderUserId"] as? String
-            message.name = dictionaryOfValues["name"] as? String
-            message.text = dictionaryOfValues["text"] as? String
-            message.timestamp = dictionaryOfValues["timestamp"] as? NSNumber
-            message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
+            let message = Message(withDictionary: dictionaryOfValues)
+//            message.fromSenderUserId = dictionaryOfValues["fromSenderUserId"] as? String
+//            message.name = dictionaryOfValues["name"] as? String
+//            message.text = dictionaryOfValues["text"] as? String
+//            message.timestamp = dictionaryOfValues["timestamp"] as? NSNumber
+//            message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
             
             guard let safelyUnwrappedToReceiverUserId = message.toReceiverUserId else { return }
             
@@ -238,13 +238,13 @@ class MessagesController: UITableViewController {
             
             guard let dictionaryOfValues = anotherSnapshot.value as? [String: AnyObject] else { return }
             
-            let message = Message()
-            message.fromSenderUserId = dictionaryOfValues["fromSenderUserId"] as? String
-            message.name = dictionaryOfValues["name"] as? String
-            message.text = dictionaryOfValues["text"] as? String
-            message.timestamp = dictionaryOfValues["timestamp"] as? NSNumber
-            message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
-            
+            let message = Message(withDictionary: dictionaryOfValues)
+//            message.fromSenderUserId = dictionaryOfValues["fromSenderUserId"] as? String
+//            message.name = dictionaryOfValues["name"] as? String
+//            message.text = dictionaryOfValues["text"] as? String
+//            message.timestamp = dictionaryOfValues["timestamp"] as? NSNumber
+//            message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
+//
             guard let safelyUnwrappedChatPartnerId = message.chatPartnerId() else { return }
             
             

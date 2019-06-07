@@ -21,6 +21,7 @@ class ChatLogCell: UICollectionViewCell {
         tv.translatesAutoresizingMaskIntoConstraints = false
         tv.backgroundColor = .clear
         tv.textColor = .white
+        tv.isEditable = false
         
         return tv
     }()
@@ -48,6 +49,18 @@ class ChatLogCell: UICollectionViewCell {
         piv.contentMode = .scaleAspectFill
         
         return piv
+    }()
+    
+    let messageImageView: UIImageView = {
+        
+        let miv = UIImageView()
+        //miv.image = UIImage(named: "nedstark")
+        miv.translatesAutoresizingMaskIntoConstraints = false
+        miv.layer.cornerRadius = 16
+        miv.layer.masksToBounds = true
+        miv.contentMode = .scaleAspectFill
+        
+        return miv
     }()
     
     //In order to be bubbleView's widthAnchor accessible from ChatLogController set this variable:
@@ -79,6 +92,8 @@ class ChatLogCell: UICollectionViewCell {
         addSubview(textView)
         addSubview(profileImageView)
         
+        bubbleView.addSubview(messageImageView)
+        
         //Set x, y, width, height constraints for bubbleView:
         bubbleViewRightAnchor = bubbleView.rightAnchor.constraint(equalTo: self.rightAnchor, constant: -8)
         bubbleViewRightAnchor!.isActive = true
@@ -102,5 +117,11 @@ class ChatLogCell: UICollectionViewCell {
         profileImageView.bottomAnchor.constraint(equalTo: self.bottomAnchor).isActive = true
         profileImageView.widthAnchor.constraint(equalToConstant: 32).isActive = true
         profileImageView.heightAnchor.constraint(equalToConstant: 32).isActive = true
+        
+        //Set x, y, width, height constraints for messageImageView:
+        messageImageView.leftAnchor.constraint(equalTo: bubbleView.leftAnchor).isActive = true
+        messageImageView.topAnchor.constraint(equalTo: bubbleView.topAnchor).isActive = true
+        messageImageView.widthAnchor.constraint(equalTo: bubbleView.widthAnchor).isActive = true
+        messageImageView.heightAnchor.constraint(equalTo: bubbleView.heightAnchor).isActive = true
     }
 }
