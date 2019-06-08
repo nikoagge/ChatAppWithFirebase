@@ -59,6 +59,10 @@ class ChatLogCell: UICollectionViewCell {
         miv.layer.cornerRadius = 16
         miv.layer.masksToBounds = true
         miv.contentMode = .scaleAspectFill
+        miv.isUserInteractionEnabled = true
+        
+        miv.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleZoomTapped)))
+        
         
         return miv
     }()
@@ -70,6 +74,8 @@ class ChatLogCell: UICollectionViewCell {
     
     //To handle safer our variables-colors
     static let blueColor = UIColor.rgb(ofRed: 0, ofGreen: 137, ofBlue: 249)
+    
+    var chatLogController: ChatLogController?
     
     
     override init(frame: CGRect) {
@@ -123,5 +129,14 @@ class ChatLogCell: UICollectionViewCell {
         messageImageView.topAnchor.constraint(equalTo: bubbleView.topAnchor).isActive = true
         messageImageView.widthAnchor.constraint(equalTo: bubbleView.widthAnchor).isActive = true
         messageImageView.heightAnchor.constraint(equalTo: bubbleView.heightAnchor).isActive = true
+    }
+    
+    
+    @objc func handleZoomTapped(forTapGesture tapGesture: UITapGestureRecognizer) {
+        
+        //It's best practice, not to perform lot of custom logic inside of a view class.
+        
+        guard let imageView = tapGesture.view as? UIImageView else { return }
+        chatLogController?.performZoomIn(forStartingImageView: imageView)
     }
 }

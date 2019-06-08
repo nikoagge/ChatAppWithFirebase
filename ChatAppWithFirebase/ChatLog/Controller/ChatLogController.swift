@@ -82,6 +82,13 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     
     var messageImageViewImageURL: String?
     
+    var startingFrame: CGRect?
+    
+    var blackBackgroundView: UIView?
+    
+    var startingImageView: UIImageView?
+    
+    
     override func viewDidLoad() {
         
         super.viewDidLoad()
@@ -455,6 +462,76 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     }
     
     
+    //Custom logic for zooming
+    func performZoomIn(forStartingImageView startingImageView: UIImageView) {
+        
+        self.startingImageView = startingImageView
+        self.startingImageView?.isHidden = true
+        
+        startingFrame = startingImageView.superview?.convert(startingImageView.frame, to: nil)
+        
+        let zoomingImageView = UIImageView(frame: startingFrame!)
+        zoomingImageView.backgroundColor = .red
+        zoomingImageView.image = startingImageView.image
+        zoomingImageView.isUserInteractionEnabled = true
+        
+        zoomingImageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleZoomOut)))
+        
+        guard let keyWindow = UIApplication.shared.keyWindow else { return }
+        
+        //For the black background behind zoomingImageView.
+        blackBackgroundView = UIView(frame: keyWindow.frame)
+        blackBackgroundView!.backgroundColor = .black
+        //To have a little fade in when blackBackgroundView comes on the background do this:
+        blackBackgroundView!.alpha = 0
+        
+        //Add it before zoomingImageView so to have it on the background.
+        keyWindow.addSubview(blackBackgroundView!)
+        keyWindow.addSubview(zoomingImageView)
+        
+        UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseOut, animations: {
+            
+            //Then set it again equal to 1:
+            self.blackBackgroundView!.alpha = 1
+            
+            //Also want to hide containerView
+            self.containerView.alpha = 0
+            
+            //Use the type for rectangles: height1 / width1 = height2 / width2 => height1 = height2 / width2 * width1. Here the zoomingImageView's frame height will be the height1, keyWindow.frame.width will be the width1, startingFrame.height will be the height2, startingFrame.width will be the width2.
+            let height = self.startingFrame!.height / self.startingFrame!.width * keyWindow.frame.width
+            
+            zoomingImageView.frame = CGRect(x: 0, y: 0, width: keyWindow.frame.width, height: height)
+            zoomingImageView.center = keyWindow.center
+        }, completion: nil)
+    }
+    
+    
+    @objc func handleZoomOut(forTapGesture tapGesture: UITapGestureRecognizer) {
+        
+        guard let zoomOutImageView = tapGesture.view else { return }
+        
+        zoomOutImageView.layer.cornerRadius = 16
+        zoomOutImageView.clipsToBounds = true
+        
+        //Need to animate back to controller
+        UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseOut, animations: {
+            
+            zoomOutImageView.frame = self.startingFrame!
+            
+            //In order to blackBackgroundView fade out when imageView zooms out:
+            self.blackBackgroundView?.alpha = 0
+            
+            //Also want to show again containerView:
+            self.containerView.alpha = 1
+        }) { (completed) in
+            
+            zoomOutImageView.removeFromSuperview()
+            
+            self.startingImageView?.isHidden = false
+        }
+    }
+    
+    
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         
         return messages.count
@@ -466,6 +543,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellIdentifier, for: indexPath) as! ChatLogCell
         cell.textView.text = messages[indexPath.item].text
         
+        cell.chatLogController = self
 //        if messageImageViewImageURL != nil {
 //
 //            cell.messageImageView.image = UIImage(named: messageImageViewImageURL!)
@@ -476,9 +554,11 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         if let messageText = messages[indexPath.item].text {
             
             cell.bubbleViewWidthAnchor?.constant = estimateFrame(forText: messageText).width + 32 //Arbitrary add 32 pixels to add some more space so to display the whole textView.
+            cell.textView.isHidden = false
         } else if messages[indexPath.item].imageURL != nil {
             
             cell.bubbleViewWidthAnchor?.constant = 200
+            cell.textView.isHidden = true
         }
         
         return cell
