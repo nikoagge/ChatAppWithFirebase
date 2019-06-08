@@ -9,6 +9,8 @@
 
 import UIKit
 import Firebase
+import MobileCoreServices
+import AVFoundation
 
 
 //Declare UICollectionViewDelegateFlowLayout in order to set the size of each collectionView's cell.
@@ -243,6 +245,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         let imagePickerController = UIImagePickerController()
         imagePickerController.delegate = self
         imagePickerController.allowsEditing = true
+        imagePickerController.mediaTypes = [kUTTypeImage as String, kUTTypeMovie as String]
         
         present(imagePickerController, animated: true, completion: nil)
     }
@@ -267,20 +270,14 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         
-        var selectedImageFromImagePicker: UIImage?
-        
-        if let editedImage = info[.editedImage] as? UIImage {
+        if let videoURL = info[.mediaURL] as? URL {
+    
+            handleVideoSelected(forURL: videoURL)
+        } else {
             
-            selectedImageFromImagePicker = editedImage
-        } else if let originalImage = info[.originalImage] as? UIImage {
-            
-            selectedImageFromImagePicker = originalImage
+            handleImageSelected(forInfo: info)
         }
-        
-        guard let selectedImage = selectedImageFromImagePicker else { return }
-        
-        uploadImageToFirebaseStorage(forImage: selectedImage)
-        
+    
         dismiss(animated: true, completion: nil)
     }
     
@@ -382,7 +379,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     }
     
     
-    private func uploadImageToFirebaseStorage(forImage image: UIImage) {
+    private func uploadImageToFirebaseStorage(forImage image: UIImage, completion: @escaping (_ imageURL: String) -> ()) {
         
         let imageName = NSUUID().uuidString
         
@@ -408,7 +405,9 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
                 }
                 
                 guard let imageURL = url?.absoluteString else { return }
-                self.sendMessage(withImageURL: imageURL, withImage: image)
+                
+                completion(imageURL)
+                //self.sendMessage(withImageURL: imageURL, withImage: image)
             })
         }
     }
@@ -459,6 +458,98 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
             let receiverUserMessagesRef = Database.database().reference().child("user-messages").child(safelyUnwrappedToReceiverUserId).child(safelyUnwrappedFromSenderUserId).child(messageId)
             receiverUserMessagesRef.setValue([safelyUnwrappedToReceiverUserId: 1])
         }
+    }
+    
+    
+    private func handleImageSelected(forInfo info: [UIImagePickerController.InfoKey: Any]) {
+        
+        var selectedImageFromImagePicker: UIImage?
+        
+        if let editedImage = info[.editedImage] as? UIImage {
+            
+            selectedImageFromImagePicker = editedImage
+        } else if let originalImage = info[.originalImage] as? UIImage {
+            
+            selectedImageFromImagePicker = originalImage
+        }
+        
+        guard let selectedImage = selectedImageFromImagePicker else { return }
+        
+        uploadImageToFirebaseStorage(forImage: selectedImage) { (imageURL) in
+            
+            self.sendMessage(withImageURL: imageURL, withImage: selectedImage)
+        }
+    }
+    
+    
+    private func handleVideoSelected(forURL url: URL) {
+        
+        let fileName = NSUUID().uuidString + ".mov"
+        
+        let uploadReference = Storage.storage().reference().child("message-movies").child(fileName)
+            
+        let uploadTask = uploadReference.putFile(from: url, metadata: nil) { (metadata, error) in
+            
+            if error != nil {
+                
+                print(error)
+                return
+            }
+            
+            uploadReference.downloadURL(completion: { (completionURL, error) in
+                
+                if error != nil {
+                    
+                    print(error)
+                    
+                    return
+                }
+                
+//                let properties = ["imageURL": imageURL as AnyObject, "imageWidth": image.size.width as AnyObject, "imageHeight": image.size.height as AnyObject]
+
+                let videoURL = url.absoluteString
+                guard let thumbnailImage = self.setThumbnailImage(forVideoURL: url) else { return }
+                
+                self.uploadImageToFirebaseStorage(forImage: thumbnailImage, completion: { (imageURL) in
+                    
+                    let properties: [String: AnyObject] = ["imageURL": imageURL as AnyObject, "imageWidth": thumbnailImage.size.width as AnyObject, "imageHeight": thumbnailImage.size.height as AnyObject, "videoURL": videoURL as AnyObject]
+                    
+                    self.sendMessage(withProperties: properties)
+                })
+            })
+        }
+        
+        uploadTask.observe(.progress) { (uploadTaskSnapshot) in
+            
+            if let completedUnitCount = uploadTaskSnapshot.progress?.completedUnitCount {
+                
+                self.navigationItem.title = String(completedUnitCount)
+            }
+        }
+        
+        uploadTask.observe(.success) { (uploadTaskSnapshot) in
+            
+            self.navigationItem.title = self.user?.name
+        }
+    }
+    
+    
+    private func setThumbnailImage(forVideoURL videoURL: URL) -> UIImage? {
+        
+        let asset = AVAsset(url: videoURL)
+        let imageGenerator = AVAssetImageGenerator(asset: asset)
+        
+        do {
+            
+             let thumbnailCGImage = try imageGenerator.copyCGImage(at: CMTime(value: 1, timescale: 60), actualTime: nil)
+            
+            return UIImage(cgImage: thumbnailCGImage)
+        } catch {
+            
+            print(error)
+        }
+        
+        return nil
     }
     
     
