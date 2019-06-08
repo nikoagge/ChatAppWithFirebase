@@ -8,6 +8,7 @@
 
 
 import UIKit
+import AVFoundation
 
 
 class ChatLogCell: UICollectionViewCell {
@@ -67,6 +68,31 @@ class ChatLogCell: UICollectionViewCell {
         return miv
     }()
     
+    let playButton: UIButton = {
+        
+        let image = UIImage(named: "play")
+        
+        let pb = UIButton(type: .system)
+        pb.setTitle("Play Video", for: .normal)
+        pb.setImage(image, for: .normal)
+        pb.tintColor = .white
+        pb.translatesAutoresizingMaskIntoConstraints = false
+        
+        pb.addTarget(self, action: #selector(playButtonTapped), for: .touchUpInside)
+        
+        return pb
+    }()
+    
+    let activityIndicatorView: UIActivityIndicatorView = {
+        
+        let uiaiv = UIActivityIndicatorView(style: .whiteLarge)
+        uiaiv.translatesAutoresizingMaskIntoConstraints = false
+        uiaiv.hidesWhenStopped = true
+        
+        return uiaiv
+    }()
+    
+    
     //In order to be bubbleView's widthAnchor accessible from ChatLogController set this variable:
     var bubbleViewWidthAnchor: NSLayoutConstraint?
     var bubbleViewRightAnchor: NSLayoutConstraint?
@@ -76,6 +102,12 @@ class ChatLogCell: UICollectionViewCell {
     static let blueColor = UIColor.rgb(ofRed: 0, ofGreen: 137, ofBlue: 249)
     
     var chatLogController: ChatLogController?
+    
+    var message: Message?
+    
+    var player: AVPlayer?
+    
+    var playerLayer: AVPlayerLayer?
     
     
     override init(frame: CGRect) {
@@ -99,6 +131,8 @@ class ChatLogCell: UICollectionViewCell {
         addSubview(profileImageView)
         
         bubbleView.addSubview(messageImageView)
+        bubbleView.addSubview(playButton)
+        bubbleView.addSubview(activityIndicatorView)
         
         //Set x, y, width, height constraints for bubbleView:
         bubbleViewRightAnchor = bubbleView.rightAnchor.constraint(equalTo: self.rightAnchor, constant: -8)
@@ -129,14 +163,61 @@ class ChatLogCell: UICollectionViewCell {
         messageImageView.topAnchor.constraint(equalTo: bubbleView.topAnchor).isActive = true
         messageImageView.widthAnchor.constraint(equalTo: bubbleView.widthAnchor).isActive = true
         messageImageView.heightAnchor.constraint(equalTo: bubbleView.heightAnchor).isActive = true
+        
+        //Set x, y, width, height constraints for playButton:
+        playButton.centerXAnchor.constraint(equalTo: bubbleView.centerXAnchor).isActive = true
+        playButton.centerYAnchor.constraint(equalTo: bubbleView.centerYAnchor).isActive = true
+        playButton.widthAnchor.constraint(equalToConstant: 50).isActive = true
+        playButton.heightAnchor.constraint(equalToConstant: 50).isActive = true
+        
+        //Set x, y, width, height constraints for activityIndicatorView:
+        activityIndicatorView.centerXAnchor.constraint(equalTo: bubbleView.centerXAnchor).isActive = true
+        activityIndicatorView.centerYAnchor.constraint(equalTo: bubbleView.centerYAnchor).isActive = true
+        activityIndicatorView.widthAnchor.constraint(equalToConstant: 50).isActive = true
+        activityIndicatorView.heightAnchor.constraint(equalToConstant: 50).isActive = true
     }
     
     
     @objc func handleZoomTapped(forTapGesture tapGesture: UITapGestureRecognizer) {
         
+        if message?.videoURL != nil {
+            
+            return
+        }
+        
         //It's best practice, not to perform lot of custom logic inside of a view class.
         
         guard let imageView = tapGesture.view as? UIImageView else { return }
         chatLogController?.performZoomIn(forStartingImageView: imageView)
+    }
+    
+    
+    @objc func playButtonTapped() {
+        
+        guard let videoURLString = message?.videoURL, let url = URL(string: videoURLString) else { return }
+        
+        player = AVPlayer(url: url)
+        
+        playerLayer = AVPlayerLayer(player: player)
+        playerLayer?.frame = bubbleView.bounds
+        
+        bubbleView.layer.addSublayer(playerLayer!)
+        
+        activityIndicatorView.startAnimating()
+        playButton.isHidden = true
+        
+        player?.play()
+    }
+    
+    
+    override func prepareForReuse() {
+        
+        super.prepareForReuse()
+        
+        playerLayer?.removeFromSuperlayer()
+        
+        player?.pause()
+        
+        activityIndicatorView.stopAnimating()
     }
 }

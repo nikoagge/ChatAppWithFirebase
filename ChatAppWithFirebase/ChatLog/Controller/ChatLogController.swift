@@ -634,6 +634,8 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellIdentifier, for: indexPath) as! ChatLogCell
         cell.textView.text = messages[indexPath.item].text
         
+        cell.message = messages[indexPath.item]
+        
         cell.chatLogController = self
 //        if messageImageViewImageURL != nil {
 //
@@ -651,6 +653,16 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
             cell.bubbleViewWidthAnchor?.constant = 200
             cell.textView.isHidden = true
         }
+        
+//        if messages[indexPath.item].videoURL != nil {
+//            
+//            cell.playButton.isHidden = false
+//        } else {
+//            
+//            cell.playButton.isHidden = true
+//        }
+        
+        cell.playButton.isHidden = messages[indexPath.item].videoURL == nil
         
         return cell
     }
