@@ -155,6 +155,14 @@ class MessagesController: UITableViewController {
                 self.fetchMessage(forMessageId: messageId)
             })
         }
+        
+        //In order to update tableView when removing child directly from Firebase console:
+        ref.observe(.childRemoved) { (dataSnashot) in
+            
+            self.messagesDictionary.removeValue(forKey: dataSnashot.key)
+            
+            self.attemptReloadOfTableView()
+        }
     }
     
     
