@@ -39,6 +39,7 @@ class MessagesController: UITableViewController {
         
         tableView.tableFooterView = UIView()
         tableView.register(UserCell.self, forCellReuseIdentifier: cellIdentifier)
+        tableView.allowsMultipleSelectionDuringEditing = true
     }
     
     
@@ -123,10 +124,16 @@ class MessagesController: UITableViewController {
             })
          
             //In order not to crash because of background thread, run this on main thread:
-            DispatchQueue.main.async {
-                
-                self.tableView.reloadData()
-            }
+            
+        }
+        
+        //In order to update tableView when removing child directly from Firebase console:
+        firebaseDatRef.observe(.childRemoved) { (dataSnashot) in
+            
+            self.messagesDictionary.removeValue(forKey: dataSnashot.key)
+            
+            //A little problem there, check again it later.
+            self.attemptReloadOfTableView()
         }
     }
     
@@ -340,6 +347,39 @@ class MessagesController: UITableViewController {
             user.profileImageURL = dictionaryOfValues["profileImageURL"] as? String
             
             self.displayChatLogController(forUser: user)
+        }
+    }
+    
+    
+    override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        
+        return true
+    }
+    
+    
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        let message = messages[indexPath.row]
+        
+        guard let chatPartnerId = message.chatPartnerId() else { return }
+        Database.database().reference().child("user-messages").child(userId).child(chatPartnerId).removeValue { (error, databaseReference) in
+            
+            if error != nil {
+                
+                print(error)
+                
+                return
+            }
+            
+            //The unsafe way to remove a message and update the table, because how we have structured our project will restore the removed message if we gonna send a new message to anotherUser:
+//            self.messages.remove(at: indexPath.row)
+//            self.tableView.deleteRows(at: [indexPath], with: .automatic)
+            
+            //The correct way:
+            self.messagesDictionary.removeValue(forKey: chatPartnerId)
+            self.attemptReloadOfTableView()
         }
     }
 }
