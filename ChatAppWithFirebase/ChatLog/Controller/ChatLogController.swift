@@ -18,7 +18,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
 
     
     let containerView: UIView = {
-       
+        
         let cv = UIView()
         cv.backgroundColor = .white
         cv.translatesAutoresizingMaskIntoConstraints = false
@@ -89,7 +89,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     var blackBackgroundView: UIView?
     
     var startingImageView: UIImageView?
-    
+
     
     override func viewDidLoad() {
         
