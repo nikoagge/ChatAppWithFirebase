@@ -15,11 +15,13 @@ class MessagesController: UITableViewController {
     
     
     var messages = [Message]()
-    
+
     //Use this in order to have one message per user. Actually the most recent message:
     var messagesDictionary = [String: Message]()
     
     var cellIdentifier = "cellId"
+    
+    var timer: Timer?
     
     
     override func viewDidLoad() {
@@ -37,6 +39,7 @@ class MessagesController: UITableViewController {
         
         tableView.tableFooterView = UIView()
         tableView.register(UserCell.self, forCellReuseIdentifier: cellIdentifier)
+        tableView.allowsMultipleSelectionDuringEditing = true
     }
     
     
@@ -97,12 +100,12 @@ class MessagesController: UITableViewController {
             
             guard let dictionaryOfValues = databaseSnapshot.value as? [String: AnyObject] else { return }
             
-            let message = Message()
-            message.fromSenderUserId = dictionaryOfValues["fromSenderUserId"] as? String
-            message.name = dictionaryOfValues["name"] as? String
-            message.text = dictionaryOfValues["text"] as? String
-            message.timestamp = dictionaryOfValues["timestamp"] as? NSNumber
-            message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
+            let message = Message(withDictionary: dictionaryOfValues)
+//            message.fromSenderUserId = dictionaryOfValues["fromSenderUserId"] as? String
+//            message.name = dictionaryOfValues["name"] as? String
+//            message.text = dictionaryOfValues["text"] as? String
+//            message.timestamp = dictionaryOfValues["timestamp"] as? NSNumber
+//            message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
             
             guard let safelyUnwrappedToReceiverUserId = message.toReceiverUserId else { return }
             
@@ -121,10 +124,16 @@ class MessagesController: UITableViewController {
             })
          
             //In order not to crash because of background thread, run this on main thread:
-            DispatchQueue.main.async {
-                
-                self.tableView.reloadData()
-            }
+            
+        }
+        
+        //In order to update tableView when removing child directly from Firebase console:
+        firebaseDatRef.observe(.childRemoved) { (dataSnashot) in
+            
+            self.messagesDictionary.removeValue(forKey: dataSnashot.key)
+            
+            //A little problem there, check again it later.
+            self.attemptReloadOfTableView()
         }
     }
     
@@ -137,41 +146,13 @@ class MessagesController: UITableViewController {
         
         ref.observe(.childAdded) { (dataSnapshot) in
             
-            let messageId = dataSnapshot.key
+            let userId = dataSnapshot.key
             
-            let messagesReference = Database.database().reference().child("messages").child(messageId)
-            messagesReference.observeSingleEvent(of: .value, with: { (anotherSnapshot) in
+            Database.database().reference().child("user-messages").child(uid).child(userId).observe(.childAdded, with: { (dataSnapshot) in
                 
-                guard let dictionaryOfValues = anotherSnapshot.value as? [String: AnyObject] else { return }
-
-                let message = Message()
-                message.fromSenderUserId = dictionaryOfValues["fromSenderUserId"] as? String
-                message.name = dictionaryOfValues["name"] as? String
-                message.text = dictionaryOfValues["text"] as? String
-                message.timestamp = dictionaryOfValues["timestamp"] as? NSNumber
-                message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
-
-                guard let safelyUnwrappedToReceiverUserId = message.toReceiverUserId else { return }
-
-                //self.messages.append(message)
-
-                self.messagesDictionary[safelyUnwrappedToReceiverUserId] = message
-
-                self.messages = Array(self.messagesDictionary.values)
-
-                //That's to sort messages by time ascending orded.
-                self.messages.sort(by: { (firstMessage, secondmessage) -> Bool in
-
-                    guard let safelyUnwrappedFirstTimestamp = firstMessage.timestamp, let safelyUnwrappedSecondTimestamp = secondmessage.timestamp else { return false }
-                    //For ascending order:
-                    return safelyUnwrappedFirstTimestamp.intValue > safelyUnwrappedSecondTimestamp.intValue
-                })
-
-                //In order not to crash because of background thread, run this on main thread:
-                DispatchQueue.main.async {
-
-                    self.tableView.reloadData()
-                }
+                let messageId = dataSnapshot.key
+                
+                self.fetchMessage(forMessageId: messageId)
             })
         }
     }
@@ -181,22 +162,19 @@ class MessagesController: UITableViewController {
         
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
-        Database.database().reference().child("users").child(userId).observeSingleEvent(of: .value, with: { (dataSnapshot) in
+    Database.database().reference().child("users").child(userId).observeSingleEvent(of: .value) { (dataSnapshot) in
             
-            if let dictionaryOfValues = dataSnapshot.value as? [String: AnyObject] {
-                
-                //self.navigationItem.title = dictionaryOfValues["name"] as? String
-                
-                let user = User()
-                user.id = userId
-                user.email = dictionaryOfValues["email"] as? String
-                user.name = dictionaryOfValues["name"] as? String
-                user.profileImageURL = dictionaryOfValues["profileImageURL"] as? String
-                //user.setValuesForKeys(dictionaryOfValues)
-                
-                self.setupNavigationBarTitleView(withUser: user)
-            }
-        }, withCancel: nil)
+            guard let dictionaryOfValues = dataSnapshot.value as? [String: AnyObject] else { return }
+            
+            let user = User()
+            user.id = userId
+            user.email = dictionaryOfValues["email"] as? String
+            user.name = dictionaryOfValues["name"] as? String
+            user.profileImageURL = dictionaryOfValues["profileImageURL"] as? String
+                            //user.setValuesForKeys(dictionaryOfValues)
+            
+            self.setupNavigationBarTitleView(withUser: user)
+        }
     }
     
     
@@ -229,7 +207,6 @@ class MessagesController: UITableViewController {
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
         
-        
         self.navigationItem.titleView = titleView
         titleView.addSubview(containerView)
         containerView.addSubview(profileImageView)
@@ -254,6 +231,46 @@ class MessagesController: UITableViewController {
     }
     
     
+    private func attemptReloadOfTableView() {
+        
+        self.timer?.invalidate()
+        self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.handleReloadTableView), userInfo: nil, repeats: false)
+    }
+    
+    
+    private func fetchMessage(forMessageId messageId: String) {
+        
+        let messagesReference = Database.database().reference().child("messages").child(messageId)
+        messagesReference.observeSingleEvent(of: .value, with: { (anotherSnapshot) in
+            
+            guard let dictionaryOfValues = anotherSnapshot.value as? [String: AnyObject] else { return }
+            
+            let message = Message(withDictionary: dictionaryOfValues)
+//            message.fromSenderUserId = dictionaryOfValues["fromSenderUserId"] as? String
+//            message.name = dictionaryOfValues["name"] as? String
+//            message.text = dictionaryOfValues["text"] as? String
+//            message.timestamp = dictionaryOfValues["timestamp"] as? NSNumber
+//            message.toReceiverUserId = dictionaryOfValues["toReceiverUserId"] as? String
+//
+            guard let safelyUnwrappedChatPartnerId = message.chatPartnerId() else { return }
+            
+            
+            self.messagesDictionary[safelyUnwrappedChatPartnerId] = message
+            
+            //self.messages.append(message)
+            
+            self.attemptReloadOfTableView()
+            
+            
+            
+            //                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: {
+            //
+            //                    self.tableView.reloadData()
+            //                })
+        })
+    }
+    
+    
     @objc func displayChatLogController(forUser user: User) {
         
         let layout = UICollectionViewFlowLayout()
@@ -261,6 +278,26 @@ class MessagesController: UITableViewController {
         let chatLogController = ChatLogController(collectionViewLayout: layout)
         chatLogController.user = user
         navigationController?.pushViewController(chatLogController, animated: true)
+    }
+    
+    
+    @objc func handleReloadTableView() {
+        
+        self.messages = Array(self.messagesDictionary.values)
+        
+        //That's to sort messages by time ascending orded.
+        self.messages.sort(by: { (firstMessage, secondmessage) -> Bool in
+            
+            guard let safelyUnwrappedFirstTimestamp = firstMessage.timestamp, let safelyUnwrappedSecondTimestamp = secondmessage.timestamp else { return false }
+            //For ascending order:
+            return safelyUnwrappedFirstTimestamp.intValue > safelyUnwrappedSecondTimestamp.intValue
+        })
+        
+        //In order not to crash because of background thread, run this on main thread:
+        DispatchQueue.main.async {
+            print("test")
+            self.tableView.reloadData()
+        }
     }
     
     
@@ -289,6 +326,61 @@ class MessagesController: UITableViewController {
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         
         return 72
+    }
+    
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        let message = messages[indexPath.row]
+        
+        guard let chatPartnerId = message.chatPartnerId() else { return }
+        
+        let reference = Database.database().reference().child("users").child(chatPartnerId)
+        reference.observeSingleEvent(of: .value) { (dataSnapshot) in
+            
+            guard let dictionaryOfValues = dataSnapshot.value as? [String: AnyObject] else { return }
+            
+            let user = User()
+            user.id = chatPartnerId
+            user.email = dictionaryOfValues["email"] as? String
+            user.name = dictionaryOfValues["name"] as? String
+            user.profileImageURL = dictionaryOfValues["profileImageURL"] as? String
+            
+            self.displayChatLogController(forUser: user)
+        }
+    }
+    
+    
+    override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        
+        return true
+    }
+    
+    
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        let message = messages[indexPath.row]
+        
+        guard let chatPartnerId = message.chatPartnerId() else { return }
+        Database.database().reference().child("user-messages").child(userId).child(chatPartnerId).removeValue { (error, databaseReference) in
+            
+            if error != nil {
+                
+                print(error)
+                
+                return
+            }
+            
+            //The unsafe way to remove a message and update the table, because how we have structured our project will restore the removed message if we gonna send a new message to anotherUser:
+//            self.messages.remove(at: indexPath.row)
+//            self.tableView.deleteRows(at: [indexPath], with: .automatic)
+            
+            //The correct way:
+            self.messagesDictionary.removeValue(forKey: chatPartnerId)
+            self.attemptReloadOfTableView()
+        }
     }
 }
 
