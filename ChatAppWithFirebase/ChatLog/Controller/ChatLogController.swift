@@ -17,53 +17,16 @@ import AVFoundation
 class ChatLogController: UICollectionViewController, UITextFieldDelegate, UICollectionViewDelegateFlowLayout, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
     
-    let containerView: UIView = {
+    lazy var containerView: ChatInputContainerView = {
         
-        let cv = UIView()
-        cv.backgroundColor = .white
-        cv.translatesAutoresizingMaskIntoConstraints = false
+        let cicv = ChatInputContainerView(frame: CGRect(x: 0, y: 0, width: self.view.frame.width, height: 50))
+        cicv.chatLogController = self
+//        let cv = UIView()
+//        cv.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 50)
+//        cv.backgroundColor = .white
+//        cv.translatesAutoresizingMaskIntoConstraints = false
         
-        return cv
-    }()
-    
-    let sendButton: UIButton = {
-
-        let sb = UIButton(type: .system)
-        sb.setTitle("Send", for: .normal)
-        sb.translatesAutoresizingMaskIntoConstraints = false
-        sb.addTarget(self, action: #selector(sendButtonTapped), for: .touchUpInside)
-
-        return sb
-    }()
-
-    lazy var inputMessageTextField: UITextField = {
-
-        let imtf = UITextField()
-        imtf.placeholder = "Enter message..."
-        imtf.translatesAutoresizingMaskIntoConstraints = false
-        imtf.delegate = self
-
-        return imtf
-    }()
-    
-    let separatorLineView: UIView = {
-
-        let slv = UIView()
-        slv.backgroundColor = .rgb(ofRed: 220, ofGreen: 220, ofBlue: 220)
-        slv.translatesAutoresizingMaskIntoConstraints = false
-
-        return slv
-    }()
-    
-    lazy var uploadImageView: UIImageView = {
-        
-        let uiv = UIImageView()
-        uiv.image = UIImage(named: "upload_image_icon")
-        uiv.translatesAutoresizingMaskIntoConstraints = false
-        uiv.isUserInteractionEnabled = true
-        uiv.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(uploadImageViewTapped)))
-        
-        return uiv
+        return cicv
     }()
     
     var user: User? {
@@ -114,10 +77,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
 
         view.addSubview(containerView)
 
-        containerView.addSubview(sendButton)
-        containerView.addSubview(inputMessageTextField)
-        containerView.addSubview(separatorLineView)
-        containerView.addSubview(uploadImageView)
+        
 
         //Set x, y, width, height constraints for containerView:
         containerView.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
@@ -126,30 +86,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         containerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
         containerView.heightAnchor.constraint(equalToConstant: 50).isActive = true
 
-        //Set x, y, width, height constraints for sendButton:
-        sendButton.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
-        sendButton.centerYAnchor.constraint(equalTo: sendButton.centerYAnchor).isActive = true
-        sendButton.widthAnchor.constraint(equalToConstant: 80).isActive = true
-        sendButton.heightAnchor.constraint(equalTo: containerView.heightAnchor).isActive = true
-
-        //Set x, y, width, height constraints for inputMessageTextField:
-        inputMessageTextField.leftAnchor.constraint(equalTo: uploadImageView.rightAnchor, constant:  8).isActive = true
-        inputMessageTextField.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
-        inputMessageTextField.rightAnchor.constraint(equalTo: sendButton.leftAnchor).isActive = true
-        inputMessageTextField.heightAnchor.constraint(equalTo: containerView.heightAnchor).isActive = true
-
-        //Set x, y, width, height constraints for separatorLineView:
-        separatorLineView.leftAnchor.constraint(equalTo: containerView.leftAnchor).isActive = true
-        separatorLineView.topAnchor.constraint(equalTo: containerView.topAnchor).isActive = true
-        separatorLineView.widthAnchor.constraint(equalTo: containerView.widthAnchor).isActive = true
-        separatorLineView.heightAnchor.constraint(equalToConstant: 1).isActive = true
         
-        //Set x, y, width, height constraints for uploadImageView:
-        uploadImageView.leftAnchor.constraint(equalTo: containerView.leftAnchor).isActive = true
-        uploadImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
-        //44 pixels is Apple's recommended size:
-        uploadImageView.widthAnchor.constraint(equalToConstant: 44).isActive = true
-        uploadImageView.heightAnchor.constraint(equalToConstant: 44).isActive = true
     }
     
     
@@ -182,7 +119,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         let firebaseDatRef = Database.database().reference().child("messages")
         let childRef = firebaseDatRef.childByAutoId()
         
-        guard let safelyUnwrappedInputMessageText = inputMessageTextField.text, let safelyUnwrappedUserName = user?.name, let safelyUnwrappedToReceiverUserId = user!.id, let safelyUnwrappedFromSenderUserId = Auth.auth().currentUser?.uid else { return }
+        guard let safelyUnwrappedInputMessageText = containerView.inputMessageTextField.text, let safelyUnwrappedUserName = user?.name, let safelyUnwrappedToReceiverUserId = user!.id, let safelyUnwrappedFromSenderUserId = Auth.auth().currentUser?.uid else { return }
         
         let timestamp = Int(NSDate().timeIntervalSince1970)
         
@@ -199,7 +136,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
             }
             
             //In order to clear the inputMessageTextField everytime I send a new message:
-            self.inputMessageTextField.text = nil
+            self.containerView.inputMessageTextField.text = nil
             
             //With this reference I create a subfolder user-messages for every sender((safelyUnwrappedFromSenderUserId):
             guard let messageId = childRef.key else { return }
@@ -279,15 +216,6 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         }
     
         dismiss(animated: true, completion: nil)
-    }
-    
-    
-    //Whenever we hit enter this function is called:
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        
-        sendButtonTapped()
-        
-        return true
     }
     
     
@@ -426,7 +354,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         let firebaseDatRef = Database.database().reference().child("messages")
         let childRef = firebaseDatRef.childByAutoId()
         
-        guard let safelyUnwrappedInputMessageText = inputMessageTextField.text, let safelyUnwrappedUserName = user?.name, let safelyUnwrappedToReceiverUserId = user!.id, let safelyUnwrappedFromSenderUserId = Auth.auth().currentUser?.uid else { return }
+        guard let safelyUnwrappedInputMessageText = containerView.inputMessageTextField.text, let safelyUnwrappedUserName = user?.name, let safelyUnwrappedToReceiverUserId = user!.id, let safelyUnwrappedFromSenderUserId = Auth.auth().currentUser?.uid else { return }
         
         let timestamp = Int(NSDate().timeIntervalSince1970)
         
@@ -448,7 +376,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
             }
             
             //In order to clear the inputMessageTextField everytime I send a new message:
-            self.inputMessageTextField.text = nil
+            self.containerView.inputMessageTextField.text = nil
             
             //With this reference I create a subfolder user-messages for every sender((safelyUnwrappedFromSenderUserId):
             guard let messageId = childRef.key else { return }
